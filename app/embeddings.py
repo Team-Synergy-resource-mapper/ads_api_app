@@ -9,7 +9,7 @@ model = XLMRobertaModel.from_pretrained('FacebookAI/xlm-roberta-base')
 # Move model to GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
-pooling = 'cls'
+pooling = 'mean'
 batch_size = 32
 
 def generate_sentence_embeddings(sentences: list[str]):
