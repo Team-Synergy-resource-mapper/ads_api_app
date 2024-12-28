@@ -7,7 +7,7 @@ router = APIRouter()
 def read_ads_router():
   return {"message": "Welcome to the Advertisement API"}
 
-@router.post("/classify", response_model= ClassificationResponse)
+@router.post("/classify")
 async def classify(request: ClassificationRequest):
   try:
 
