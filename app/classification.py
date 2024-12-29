@@ -1,60 +1,62 @@
 from .embeddings import generate_sentence_embeddings
-from joblib import load
+# from joblib import load
 import os 
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from .nn_models.nn_classifier import NN_Classifier
+from setup_models import manager
+# from .nn_models.nn_classifier import NN_Classifier
 
 
-vehicle_category_scaler = load("./app/ml_models/vehicles/vehicle_category_scaler.joblib")
-
-vehicle_category_classifier = load("./app/ml_models/vehicles/vehicle_cat_svm_classifier.pkl")
-main_category_clsssifier = load("./app/ml_models/main/main_cat_svm_classifier.pkl")
-property_category_clsssifier = load("./app/ml_models/property/property_cat_lr_classifier.pkl")
-# electronic_category_clsssifier = load("./app/ml_models/electronics/electronics_cat_lr_classifier.pkl")
-electronic_category_clsssifier = NN_Classifier(768, 10)
-electronic_category_clsssifier.load("./app/ml_models/electronics/electronics_cat_nn_classifier.keras")
-
-label_to_category_main_cat = {0: 'Electronics', 2: 'Vehicle', 1: 'Property'}
-
-label_to_category_electronics_cat = {0: 'Air Conditions & Electrical fittings',
-                              1: 'Audio & MP3',
-                              2: 'Cameras & Camcorders',
-                              5: 'Electronic Home Appliances',
-                              7: 'Mobile Phones & Tablets',
-                              4: 'Computers',
-                              3: 'Computer Accessories',
-                              6: 'Mobile Phone Accessories',
-                              8: 'Other Electronics',
-                              9: 'TVs'}
-
-label_to_category_property_cat = {3: 'Land',
-                                  0: 'Apartment',
-                                  2: 'House',
-                                  1: 'Commercial property',
-                                  4: 'Room & Annex'}
-
-label_to_category_vehicle_cat = {2: 'Car',
-                                 5: 'Van',
-                                 4: 'Three-wheeler',
-                                 1: 'Bike',
-                                 3: 'Lorry_truck',
-                                 0: 'Bicycle'}
 
 
-label_to_category = {
-   "Vehicle" : label_to_category_vehicle_cat,
-   "Electronics" : label_to_category_electronics_cat,
-   "Property" : label_to_category_property_cat,
-}
+# vehicle_category_classifier = load("./app/ml_models/vehicles/vehicle_cat_svm_classifier.pkl")
+# main_category_clsssifier = load("./app/ml_models/main/main_cat_svm_classifier.pkl")
+# property_category_clsssifier = load("./app/ml_models/property/property_cat_lr_classifier.pkl")
+# # electronic_category_clsssifier = load("./app/ml_models/electronics/electronics_cat_lr_classifier.pkl")
+# electronic_category_clsssifier = NN_Classifier(768, 10)
+# electronic_category_clsssifier.load("./app/ml_models/electronics/electronics_cat_nn_classifier.keras")
 
-sub_category_models = {
-   "Vehicle": vehicle_category_classifier,
-   "Electronics": electronic_category_clsssifier,
-   "Property": property_category_clsssifier,
-}
+# label_to_category_main_cat = {0: 'Electronics', 2: 'Vehicle', 1: 'Property'}
+
+# label_to_category_electronics_cat = {0: 'Air Conditions & Electrical fittings',
+#                               1: 'Audio & MP3',
+#                               2: 'Cameras & Camcorders',
+#                               5: 'Electronic Home Appliances',
+#                               7: 'Mobile Phones & Tablets',
+#                               4: 'Computers',
+#                               3: 'Computer Accessories',
+#                               6: 'Mobile Phone Accessories',
+#                               8: 'Other Electronics',
+#                               9: 'TVs'}
+
+# label_to_category_property_cat = {3: 'Land',
+#                                   0: 'Apartment',
+#                                   2: 'House',
+#                                   1: 'Commercial property',
+#                                   4: 'Room & Annex'}
+
+# label_to_category_vehicle_cat = {2: 'Car',
+#                                  5: 'Van',
+#                                  4: 'Three-wheeler',
+#                                  1: 'Bike',
+#                                  3: 'Lorry_truck',
+#                                  0: 'Bicycle'}
+
+
+# label_to_category = {
+#    "Vehicle" : label_to_category_vehicle_cat,
+#    "Electronics" : label_to_category_electronics_cat,
+#    "Property" : label_to_category_property_cat,
+# }
+
+# sub_category_models = {
+#    "Vehicle": vehicle_category_classifier,
+#    "Electronics": electronic_category_clsssifier,
+#    "Property": property_category_clsssifier,
+# }
 
 def classify_ads(ads: list[str]):
+  
   # genarate embeddings for each sentence
   embeddings = generate_sentence_embeddings(ads)
   # predict main categories
@@ -85,9 +87,9 @@ def classify_ads(ads: list[str]):
 
 
 
-def predict_main_category(embeddings):
-    main_category_predictions_labels = main_category_clsssifier.predict(
-        embeddings)
+def predict_main_category(embeddings, model):
+   
+    main_category_predictions_labels = model.predict(embeddings)
     main_category_predictions_cat_names = [label_to_category_main_cat[i] for i in main_category_predictions_labels]
     # [ "Vehicle", "Vehicle, "Property", "Vehicle" , "Elctronics"]
     return main_category_predictions_cat_names

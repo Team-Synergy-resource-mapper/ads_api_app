@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from ..models import ClassificationRequest, ClassificationResponse
-from ..classification import classify_ads
+from ..setup_models import ad_classifier
+
 router = APIRouter()
 
 @router.get("/")
@@ -12,7 +13,7 @@ async def classify(request: ClassificationRequest):
   try:
 
     # Perform classification
-    predictions = classify_ads(request.sentences)
+    predictions = ad_classifier.classify(request.sentences)
     return {
       "predictions": predictions
     }
