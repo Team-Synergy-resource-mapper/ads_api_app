@@ -1,6 +1,6 @@
-from .embeddings import generate_sentence_embeddings
 # from joblib import load
 import os 
+from core.embeddings import generate_sentence_embeddings
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from setup_models import manager

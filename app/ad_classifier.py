@@ -1,6 +1,6 @@
 import logging
-from .embeddings import generate_sentence_embeddings
-from .parallel_processor import ParallelProcessor
+from .core.embeddings import generate_sentence_embeddings
+from .core.parallel_processor import ParallelProcessor
 from collections import defaultdict
 import numpy as np
 

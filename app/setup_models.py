@@ -1,8 +1,14 @@
+import os
 from joblib import load
-from .model_manager import ModelManager
+from .ml.model_manager import ModelManager
 from .ad_classifier import AdClassifier
 from .predictor import CategoryPredictor
 from .nn_models_classes.nn_electronics_classifier import NNElectronicsClassifier
+
+
+model_dir = os.path.join(os.path.dirname(__file__), '../ml_models')
+
+
 
 categories = {"Vehicle", "Electronics", "Property", "Main"}
 
@@ -40,31 +46,31 @@ label_to_category = {
     }
 }
 vehicle_category_classifier_svm = load(
-    "./app/ml_models/vehicles/vehicle_cat_svm_classifier.pkl")
-main_category_clsssifier_svm = load(
-    "./app/ml_models/main/main_cat_svm_classifier.pkl")
-property_category_clsssifier_lr = load(
-    "./app/ml_models/property/property_cat_lr_classifier.pkl")
-electronic_category_clsssifier_lr = load(
-    "./app/ml_models/electronics/electronics_cat_lr_classifier.pkl")
+    os.path.join(model_dir, 'vehicles/vehicle_cat_svm_classifier.pkl'))
+main_category_classifier_svm = load(
+    os.path.join(model_dir, 'main/main_cat_svm_classifier.pkl'))
+property_category_classifier_lr = load(
+    os.path.join(model_dir, 'property/property_cat_lr_classifier.pkl'))
+electronic_category_classifier_lr = load(
+    os.path.join(model_dir, 'electronics/electronics_cat_lr_classifier.pkl'))
 
-electronic_category_clsssifier_nn = NNElectronicsClassifier(input_dim=768, num_classes= len(label_to_category['Electronics']))
-electronic_category_clsssifier_nn.load(
-    "./app/ml_models/electronics/electronics_cat_nn_classifier_new.keras")
+electronic_category_classifier_nn = NNElectronicsClassifier(input_dim=768, num_classes=len(label_to_category['Electronics']))
+electronic_category_classifier_nn.load(
+    os.path.join(model_dir, 'electronics/electronics_cat_nn_classifier_new.keras'))
 
 manager = ModelManager(categories= categories, label_to_category=label_to_category)
 
 main_category_predictor = CategoryPredictor(
-  model= main_category_clsssifier_svm, 
+  model= main_category_classifier_svm, 
   label_to_category= label_to_category['Main'])
 
 property_category_predictor = CategoryPredictor(
-  model=property_category_clsssifier_lr, 
+  model=property_category_classifier_lr, 
   label_to_category=label_to_category['Property']
 )
 
 electronic_category_predictor = CategoryPredictor(
-  model=electronic_category_clsssifier_nn, 
+  model=electronic_category_classifier_nn, 
   label_to_category=label_to_category['Electronics']
 )
 vehicle_category_predictor = CategoryPredictor(
