@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers import ads
+from .api.endpoints import ads
 
 app = FastAPI()
 

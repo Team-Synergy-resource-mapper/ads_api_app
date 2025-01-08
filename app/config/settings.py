@@ -14,3 +14,26 @@ VEHICLES_MODELS_DIR = ML_MODELS_DIR / "vehicles"
 
 # Directory for embedding-related files
 EMBEDDING_GENERATOR = PROJECT_ROOT / "core" / "embeddings"
+
+
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+            "level": "INFO"
+        }
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO"
+    }
+}
+

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from ..models import ClassificationRequest, ClassificationResponse
-from ..setup_models import ad_classifier
+from ...config.setup_models import ad_classifier
 
 router = APIRouter()
 

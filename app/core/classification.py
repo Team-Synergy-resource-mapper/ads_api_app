@@ -3,7 +3,7 @@ import os
 from core.embeddings import generate_sentence_embeddings
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from setup_models import manager
+from app.config.setup_models import manager
 # from .nn_models.nn_classifier import NN_Classifier
 
 

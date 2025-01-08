@@ -1,9 +1,9 @@
 import os
 from joblib import load
-from .ml.model_manager import ModelManager
-from .ad_classifier import AdClassifier
-from .predictor import CategoryPredictor
-from .nn_models_classes.nn_electronics_classifier import NNElectronicsClassifier
+from ..ml.model_manager import ModelManager
+from ..core.ad_classifier import AdClassifier
+from ..predictor import CategoryPredictor
+from ..nn_models_classes.nn_electronics_classifier import NNElectronicsClassifier
 
 
 model_dir = os.path.join(os.path.dirname(__file__), '../ml_models')
