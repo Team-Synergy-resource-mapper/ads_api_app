@@ -5,29 +5,39 @@ from .predictor import CategoryPredictor
 from .nn_models_classes.nn_electronics_classifier import NNElectronicsClassifier
 
 categories = {"Vehicle", "Electronics", "Property", "Main"}
+
 label_to_category = {
-    "Main": {0: 'Electronics', 2: 'Vehicle', 1: 'Property'},
-    "Vehicle": {2: 'Car',
-                5: 'Van',
-                4: 'Three-wheeler',
-                1: 'Bike',
-                3: 'Lorry_truck',
-                0: 'Bicycle'},
-    "Electronics": {0: 'Air Conditions & Electrical fittings',
-                    1: 'Audio & MP3',
-                    2: 'Cameras & Camcorders',
-                    5: 'Electronic Home Appliances',
-                    7: 'Mobile Phones & Tablets',
-                    4: 'Computers',
-                    3: 'Computer Accessories',
-                    6: 'Mobile Phone Accessories',
-                    8: 'Other Electronics',
-                    9: 'TVs'},
-    "Property": {3: 'Land',
-                 0: 'Apartment',
-                 2: 'House',
-                 1: 'Commercial property',
-                 4: 'Room & Annex'}
+    "Main": {
+        0: 'Electronics',
+        1: 'Property',
+        2: 'Vehicle'
+    },
+    "Vehicle": {
+        0: 'Bicycle',
+        1: 'Bike',
+        2: 'Car',
+        3: 'Lorry_truck',
+        4: 'Three-wheeler',
+        5: 'Van'
+    },
+    "Electronics": {
+        0: 'Air Conditions & Electrical fittings',
+        1: 'Audio & MP3',
+        2: 'Cameras & Camcorders',
+        3: 'Computer Accessories',
+        4: 'Computers',
+        5: 'Electronic Home Appliances',
+        6: 'Mobile Phone Accessories',
+        7: 'Mobile Phones & Tablets',
+        8: 'TVs'
+    },
+    "Property": {
+        0: 'Apartment',
+        1: 'Commercial property',
+        2: 'House',
+        3: 'Land',
+        4: 'Room & Annex'
+    }
 }
 vehicle_category_classifier_svm = load(
     "./app/ml_models/vehicles/vehicle_cat_svm_classifier.pkl")
