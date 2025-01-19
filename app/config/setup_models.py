@@ -6,7 +6,7 @@ from ..predictor import CategoryPredictor
 from ..nn_models_classes.nn_electronics_classifier import NNElectronicsClassifier
 
 
-model_dir = os.path.join(os.path.dirname(__file__), '../ml_models')
+model_dir = os.path.join(os.path.dirname(__file__), '../../ml_models')
 
 
 
@@ -56,7 +56,7 @@ electronic_category_classifier_lr = load(
 
 electronic_category_classifier_nn = NNElectronicsClassifier(input_dim=768, num_classes=len(label_to_category['Electronics']))
 electronic_category_classifier_nn.load(
-    os.path.join(model_dir, 'electronics/electronics_cat_nn_classifier_new.keras'))
+    os.path.join(model_dir, 'electronics/electronics_cat_nn_classifier_new_2.keras'))
 
 manager = ModelManager(categories= categories, label_to_category=label_to_category)
 

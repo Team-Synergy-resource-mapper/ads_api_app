@@ -15,6 +15,20 @@ VEHICLES_MODELS_DIR = ML_MODELS_DIR / "vehicles"
 # Directory for embedding-related files
 EMBEDDING_GENERATOR = PROJECT_ROOT / "core" / "embeddings"
 
+# Database and Vector Store URLs
+POSTGRES_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/ads_db"
+VECTOR_STORE_URL = "http://localhost:6333"
+
+# Model paths
+MODEL_PATHS = {
+    "electronics": str(ELECTRONICS_MODELS_DIR / "electronics_cat_nn_classifier_new_2.keras"),
+    "property": str(PROPERTY_MODELS_DIR / "property_classifier.keras"),
+    "vehicles": str(VEHICLES_MODELS_DIR / "vehicles_classifier.keras")
+}
+
+# Batch processing settings
+BATCH_SIZE = 100  # Number of items to process in each batch
+MODEL_VERSION = "1.0.0"  # Current version of the classification model
 
 LOGGING_CONFIG = {
     "version": 1,

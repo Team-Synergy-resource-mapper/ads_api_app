@@ -10,6 +10,42 @@ class AdClassifier:
     self.main_predictor = model_manager.get_model("Main")
     self.processor = ParallelProcessor(self._process_subcategory)
 
+  def generate_embeddings(self, texts):
+    """Added to match BatchProcessingService interface"""
+    return generate_sentence_embeddings(texts)
+
+  def classify_batch(self, embeddings):
+    """Added to match BatchProcessingService interface"""
+    # Use existing classification logic
+    main_category_predictions = self.main_predictor.predict(embeddings)
+    category_idx_list_dict = self._group_by_main_category(main_category_predictions)
+    
+    sub_category_predictions = []
+    for main_category, idx_list in category_idx_list_dict.items():
+        sub_category_predictions.extend(
+            self._process_subcategory(main_category, idx_list, embeddings)
+        )
+
+    sub_category_predictions_sorted = [
+        prediction for (_, prediction) in sorted(
+            sub_category_predictions, 
+            key=lambda x: x[0]
+        )
+    ]
+
+    # Return in format expected by batch service
+    return [
+        {
+            'main_category': main_cat,
+            'sub_category': sub_cat,
+            'leaf_category': None  # Since original code doesn't use leaf categories
+        }
+        for main_cat, sub_cat in zip(
+            main_category_predictions, 
+            sub_category_predictions_sorted
+        )
+    ]
+
   def classify(self, ads):
       logging.info("Generating embeddings...")
       embeddings = generate_sentence_embeddings(ads)
@@ -21,14 +57,17 @@ class AdClassifier:
       logging.info("Grouping ads by main category...")
       category_idx_list_dict = self._group_by_main_category(main_category_predictions)
 
-      logging.info("Processing subcategories in parallel...")
-      tasks = [
-          (main_category, idx_list, embeddings)
-          for main_category, idx_list in category_idx_list_dict.items()
-      ]
+      # logging.info("Processing subcategories in parallel...")
+      # tasks = [
+      #     (main_category, idx_list, embeddings)
+      #     for main_category, idx_list in category_idx_list_dict.items()
+      # ]
 
-      # make subcategory predictions
-      sub_category_predictions = self.processor.execute(tasks)  # [(idx,subcategory)]
+      # # make subcategory predictions
+      # sub_category_predictions = self.processor.execute(tasks)  # [(idx,subcategory)]
+      sub_category_predictions = []
+      for main_category, idx_list in category_idx_list_dict.items():
+          sub_category_predictions.extend(self._process_subcategory(main_category, idx_list, embeddings))
 
 
       logging.info("Combining results...")
