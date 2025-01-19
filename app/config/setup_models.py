@@ -58,7 +58,7 @@ electronic_category_classifier_lr = load(
 
 electronic_category_classifier_nn = NNElectronicsClassifier(input_dim=768, num_classes=len(label_to_category['Electronics']))
 electronic_category_classifier_nn.load(
-    os.path.join(model_dir, 'electronics/electronics_cat_nn_classifier_new.keras'))
+    os.path.join(model_dir, 'electronics/electronics_cat_nn_classifier_new_2.keras'))
 
 manager = ModelManager(categories= categories, label_to_category=label_to_category)
 
