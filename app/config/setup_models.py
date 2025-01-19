@@ -6,7 +6,9 @@ from ..predictor import CategoryPredictor
 from ..nn_models_classes.nn_electronics_classifier import NNElectronicsClassifier
 
 
-model_dir = os.path.join(os.path.dirname(__file__), '../ml_models')
+# Get the absolute path to the project root directory
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+model_dir = os.path.join(project_root, 'ml_models')
 
 
 
