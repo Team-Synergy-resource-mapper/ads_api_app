@@ -1,6 +1,6 @@
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from app.config import LABSE_MODEL_NAME, BATCH_SIZE
+from app.config.config import LABSE_MODEL_NAME, BATCH_SIZE
 
 
 class LaBSEEmbedding:

@@ -4,7 +4,7 @@ import tensorflow as tf
 from ..models.tensorflow_models import load_siamese_branch
 from app.models.embedding_models import LaBSEEmbedding
 # from app.models.vector_db import VectorDB
-from app.config import MODEL_PATH, INDEX_PATH, METADATA_PATH, VECTOR_DB_DIR
+from app.config.config import MODEL_PATH, INDEX_PATH, METADATA_PATH, VECTOR_DB_DIR
 
 
 class EmbeddingService:
