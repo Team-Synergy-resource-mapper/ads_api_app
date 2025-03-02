@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from .api.endpoints import ads
 from contextlib import asynccontextmanager
+from .api.endpoints.ads import router as ads_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -14,10 +16,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(ads.router, prefix="/ads", tags=["ads"]) 
-@app.get("/")
-def read_root():
-  return {"message": "Welcome to the FastAPI API!"}
+app.include_router(ads_router, prefix="/ads", tags=["ads"])
+
 
 
 

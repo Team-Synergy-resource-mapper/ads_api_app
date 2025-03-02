@@ -5,6 +5,9 @@ from ..models import ClassificationRequest, ClassificationResponse
 from ...models.models import RawListing
 from ...config.setup_models import ad_classifier
 from ...db_config import SessionLocal, DATABASE_URL
+from app.models.schemas import AdsRequest, EmbeddingRequest, EmbeddingResponse
+from app.services.embedding_service import EmbeddingService
+from app.dependencies import get_embedding_service
 
 router = APIRouter()
 
@@ -72,3 +75,22 @@ async def classify_listings(limit: int = Query(5, ge=0), db: Session = Depends(g
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/generate",
+            #   response_model=EmbeddingResponse
+              )
+async def generate_ad_embeddings(
+    request: AdsRequest,
+    embedding_service: EmbeddingService = Depends(get_embedding_service)
+):
+    """Generate embeddings for ads using a preloaded model."""
+    if embedding_service.embedding_model is None or embedding_service.labse_model is None:
+        raise HTTPException(status_code=503, detail="Models not initialized")
+
+    try:
+        result = embedding_service.generate_ad_embeddings(request.ads)
+        # return result
+        return "Ads generated"
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error generating embeddings: {str(e)}")
