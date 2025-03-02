@@ -6,9 +6,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from app.config.setup_models import manager
 # from .nn_models.nn_classifier import NN_Classifier
 
-
-
-
 # vehicle_category_classifier = load("./app/ml_models/vehicles/vehicle_cat_svm_classifier.pkl")
 # main_category_clsssifier = load("./app/ml_models/main/main_cat_svm_classifier.pkl")
 # property_category_clsssifier = load("./app/ml_models/property/property_cat_lr_classifier.pkl")
