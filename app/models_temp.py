@@ -8,3 +8,11 @@ class ClassificationRequest(BaseModel):
 
 class ClassificationResponse(BaseModel):
     predictions: List[int]  
+
+class Ad(BaseModel):
+    description : str
+
+class AdRequest(BaseModel):
+    ads : List[Ad]    
+    
+       
