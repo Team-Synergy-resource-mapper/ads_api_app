@@ -1,5 +1,5 @@
 import logging
-from .embeddings import generate_sentence_embeddings
+from .xlmr_embeddings import generate_sentence_embeddings
 from collections import defaultdict
 import numpy as np
 

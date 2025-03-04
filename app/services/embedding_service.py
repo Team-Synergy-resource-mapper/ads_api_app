@@ -4,7 +4,7 @@ import tensorflow as tf
 from app.models.siamese_model import load_siamese_branch, load_siamese_model
 from app.models.labse_embedding_model import LaBSEEmbedding
 # from app.models.vector_db import VectorDB
-from app.config import MODEL_PATH, INDEX_PATH, METADATA_PATH, VECTOR_DB_DIR, LABEL_TO_CATEGORY_MAPPING_MAIN, LABEL_TO_CATEGORY_MAPPING_SUB
+from app.config.config import MODEL_PATH, INDEX_PATH, METADATA_PATH, VECTOR_DB_DIR, LABEL_TO_CATEGORY_MAPPING_MAIN, LABEL_TO_CATEGORY_MAPPING_SUB
 from app.models import schemas
 from typing import List
 import logging

@@ -1,12 +1,26 @@
 from fastapi import FastAPI
-from app.routers import ads as ads_router
+# from app.routers import ads as ads_router
 import logging
 from app.logging_config import setup_logging
+from .api.endpoints import ads
+from contextlib import asynccontextmanager
+from .api.endpoints.ads import router as ads_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start up tasks
+    print("Application startup...")
+    
+    yield
+    
+    # Clean up tasks
+    print("Application shutdown...")
 
 
 setup_logging()
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(ads_router, prefix="/ads", tags=["ads"])
