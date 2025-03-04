@@ -10,7 +10,6 @@ BASE_DIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 
 # Model configurations
 MODEL_PATH = os.getenv(
-
     "MODEL_PATH", "./ml_models/matching/siamese_branch_model_labse.keras")
 
 VECTOR_DB_DIR = os.getenv("VECTOR_DB_DIR", "vector_db")
