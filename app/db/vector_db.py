@@ -1,7 +1,6 @@
 from pymongo import MongoClient
 from pymongo.operations import SearchIndexModel
 import numpy as np
-import tensorflow as tf
 from datetime import datetime
 from typing import List
 import app.models.schemas as schemas
