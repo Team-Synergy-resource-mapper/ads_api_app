@@ -30,3 +30,35 @@ MAX_ELEMENTS = 100000  # Maximum number of elements in vector DB
 EF_CONSTRUCTION = 200  # HNSW index parameter
 M = 16  # HNSW index parameter
 EF_SEARCH = 50  # HNSW search parameter
+
+
+# category mappings siamese model
+
+LABEL_TO_CATEGORY_MAPPING_MAIN = {
+    'electronics': 0,
+    'property': 1,
+    'vehicle': 2
+}
+
+LABEL_TO_CATEGORY_MAPPING_SUB = {
+    19: 'van',
+    18: 'three-wheeler',
+    17: 'room & annex',
+    16: 'lorry truck',
+    15: 'land',
+    14: 'house',
+    13: 'commercial property',
+    12: 'car',
+    11: 'bike',
+    10: 'bicycle',
+    9: 'apartment',
+    8: 'tvs',
+    7: 'mobile phones & tablets',
+    6: 'mobile phone accessories',
+    5: 'electronic home appliances',
+    4: 'computers',
+    3: 'computer accessories',
+    2: 'cameras & camcorders',
+    1: 'audio & mp3',
+    0: 'air conditions & electrical fittings'
+}
