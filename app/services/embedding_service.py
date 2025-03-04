@@ -35,6 +35,7 @@ class EmbeddingService:
             # self.embedding_model = load_siamese_branch(MODEL_PATH)
             self.siamese_model = load_siamese_model(MODEL_PATH)
             logger.info(f"Loaded embedding model from {MODEL_PATH}")
+            print(f"Loaded embedding model from {MODEL_PATH}")
             return True
         except Exception as e:
             logger.critical(f"Error loading embedding model: {e}")
