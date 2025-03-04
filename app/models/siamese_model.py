@@ -68,3 +68,17 @@ def load_siamese_branch(model_path):
     )
     return loaded_branch
 
+
+def load_siamese_model(model_path):
+    """Load the saved Siamese model with custom objects"""
+    loaded_model = tf.keras.models.load_model(
+        model_path,
+        custom_objects={
+            'l2_normalize_fn': l2_normalize_fn,
+            'SimpleAttentionFusion': SimpleAttentionFusion
+        },
+        compile=False
+    )
+    return loaded_model
+
+
