@@ -35,7 +35,7 @@ async def generate_ad_embeddings(
     embedding_service: EmbeddingService = Depends(get_embedding_service)
 ):
     """Generate embeddings for ads using a preloaded model."""
-    if embedding_service.embedding_model is None or embedding_service.labse_model is None:
+    if embedding_service.siamese_model is None or embedding_service.labse_model is None:
         raise HTTPException(status_code=503, detail="Models not initialized")
 
     try:
