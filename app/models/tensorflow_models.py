@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+from tensorflow import keras
 
 def l2_normalize_fn(x):
     """L2 normalization for unit-length embeddings"""
@@ -58,7 +58,7 @@ def load_siamese_branch(model_path):
     Returns:
         The loaded siamese branch model
     """
-    loaded_branch = tf.keras.models.load_model(
+    loaded_branch = keras.models.load_model(
         model_path,
         custom_objects={
             'l2_normalize_fn': l2_normalize_fn,
@@ -67,3 +67,4 @@ def load_siamese_branch(model_path):
         compile=False
     )
     return loaded_branch
+
