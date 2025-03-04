@@ -3,14 +3,10 @@ from joblib import load
 from ..ml.model_manager import ModelManager
 from ..core.ad_classifier import AdClassifier
 from ..predictor import CategoryPredictor
-from ..nn_models_classes.nn_electronics_classifier import NNElectronicsClassifier
-
 
 # Get the absolute path to the project root directory
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 model_dir = os.path.join(project_root, 'ml_models')
-
-
 
 categories = {"Vehicle", "Electronics", "Property", "Main"}
 
@@ -47,18 +43,14 @@ label_to_category = {
         4: 'Room & Annex'
     }
 }
-vehicle_category_classifier_svm = load(
-    os.path.join(model_dir, 'vehicles/vehicle_cat_svm_classifier.pkl'))
 main_category_classifier_svm = load(
-    os.path.join(model_dir, 'main/main_cat_svm_classifier.pkl'))
-property_category_classifier_lr = load(
-    os.path.join(model_dir, 'property/property_cat_lr_classifier.pkl'))
-electronic_category_classifier_lr = load(
-    os.path.join(model_dir, 'electronics/electronics_cat_lr_classifier.pkl'))
-
-electronic_category_classifier_nn = NNElectronicsClassifier(input_dim=768, num_classes=len(label_to_category['Electronics']))
-electronic_category_classifier_nn.load(
-    os.path.join(model_dir, 'electronics/electronics_cat_nn_classifier_new_2.keras'))
+    os.path.join(model_dir, 'main/main_cat_lr_classifier.pkl'))
+vehicle_category_classifier = load(
+    os.path.join(model_dir, 'vehicles/vehicle_cat2_nn_classifier.pkl'))
+property_category_classifier = load(
+    os.path.join(model_dir, 'property/property_cat2_nn_classifier.pkl'))
+electronic_category_classifier = load(
+    os.path.join(model_dir, 'electronics/electronic_cat2_svmrbf_classifier.pkl'))
 
 manager = ModelManager(categories= categories, label_to_category=label_to_category)
 
@@ -67,19 +59,17 @@ main_category_predictor = CategoryPredictor(
   label_to_category= label_to_category['Main'])
 
 property_category_predictor = CategoryPredictor(
-  model=property_category_classifier_lr, 
+  model=property_category_classifier, 
   label_to_category=label_to_category['Property']
 )
-
 electronic_category_predictor = CategoryPredictor(
-  model=electronic_category_classifier_nn, 
+  model=electronic_category_classifier, 
   label_to_category=label_to_category['Electronics']
 )
 vehicle_category_predictor = CategoryPredictor(
-  model=vehicle_category_classifier_svm, 
+  model=vehicle_category_classifier, 
   label_to_category=label_to_category['Vehicle']
 ) 
-
 
 manager.set_model("Main", main_category_predictor)
 manager.set_model("Vehicle", vehicle_category_predictor)
@@ -87,6 +77,7 @@ manager.set_model("Electronics",electronic_category_predictor)
 manager.set_model("Property", property_category_predictor)
 
 ad_classifier = AdClassifier(manager)
+
 print("setup completed..")
 
 
