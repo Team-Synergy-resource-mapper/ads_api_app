@@ -6,7 +6,7 @@ import pathlib
 load_dotenv()
 
 # Base directory
-BASE_DIR = pathlib.Path(__file__).parent.parent.absolute()
+BASE_DIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 
 # Model configurations
 MODEL_PATH = os.getenv(
