@@ -6,12 +6,16 @@ from app.logging_config import setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start up tasks
+    print("Application startup...")
+    
+    yield
+    
+    # Clean up tasks
+    print("Application shutdown...")
 
-app.include_router(ads.router, prefix="/ads", tags=["ads"]) 
-@app.get("/")
-def read_root():
-  return {"message": "Welcome to the FastAPI API!"}
+app = FastAPI(lifespan=lifespan)
 
-
-
+app.include_router(ads_router, prefix="/ads", tags=["ads"])
