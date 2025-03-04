@@ -8,6 +8,7 @@ import app.models.schemas as schemas
 import logging
 from bson.binary import BinaryVectorDtype, Binary
 from app.models.schemas import Ad
+from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +18,12 @@ class VectorDB:
       self.db = self.client[db_name]
       self.collection = self.db[collection_name]
       self._ensure_index_exists()
+      self.ad_embedding_index_name = "vector_index"
 
   def _ensure_index_exists(self):
-      index_name  = "vectors_index"
+      
       indexes = list(self.collection.list_search_indexes())
-      index_exists = any(idx["name"] == index_name for idx in indexes)
+      index_exists = any(idx["name"] == self.ad_embedding_index_name for idx in indexes)
 
       if not index_exists:
           search_index_model = SearchIndexModel(
@@ -30,13 +32,26 @@ class VectorDB:
                       {
                           "type": "vector",
                           "path": "ad_embedding",
-                          "numDimensions": 1536,
+                          "numDimensions": 256,
                           "similarity": "cosine",
                           # "quantization": "scalar"
+                      },
+                      {
+                          "type": "filter",
+                          "path": "main_category"
+                      },
+                      {
+                          "type": "filter",
+                          "path" : "sub_category"
+                      },
+                      {
+                          "type" : "filter",
+                          "path": "wanted_offering"
                       }
+
                   ]
               },
-              name= index_name,
+              name= self.ad_embedding_index_name,
               type="vectorSearch",
           )
           
@@ -48,13 +63,15 @@ class VectorDB:
   def insert_ad(self, ad : Ad , embedding):
       
       embedding = self._generate_bson_vector(embedding)
-      return self.collection.insert_one(
+      result =  self.collection.insert_one(
           {
               **ad.model_dump(),
               "ad_embedding": embedding,
               "created_at": datetime.now()
           }
       )
+      logger.info(f"Ad inserted with id: {result.inserted_id}")
+      return result
 
   def insert_ads(self, ads : List[Ad], embeddings):
       if len(ads) != len(embeddings):
@@ -62,23 +79,30 @@ class VectorDB:
           raise ValueError("Ads and embeddings lengths do not match")
       documents = [
           {
-              
+              **ad.model_dump(),
+              "ad_embedding": self._generate_bson_vector(embeddings[i]),
+              "created_at": datetime.now()
           }
           for i, ad in enumerate(ads)
       ]
 
-      return self.collection.insert_many(documents)
+      result =  self.collection.insert_many(documents)
+      logger.info(f"Ads inserted with ids: {', '.join(str(id) for id in result.inserted_ids)}")
+      return result
   
-  def search_similar(self, query_embedding: np.ndarray, limit: int = 5):
+  def search_similar_by_query_embedding(self, query_embedding: np.ndarray, limit: int = 10, number_of_candidates: int = 100):
         pipeline = [
-            {"$search": {
-                "index": "vector_index",
-                "knnBeta": {
-                    "vector": query_embedding.tolist(),
-                    "path": "embedding",
-                    "k": limit
+            {
+                "$vectorSearch": {
+                    # "exact": false, defualt : false for ann search
+                    # "filter": { },
+                    "index": self.ad_embedding_index_name,
+                    "limit": limit,
+                    "numCandidates": number_of_candidates,
+                    "path": "ad_embedding",
+                    "queryVector": query_embedding,
                 }
-            }},
+            },
             {"$project": {
                 "text": 1,
                 "main_category": 1,
@@ -89,5 +113,73 @@ class VectorDB:
                 "_id": 1
             }}
         ]
-        return list(self.collection.aggregate(pipeline))
+        logger.info(f"Searching for similar ads using query embedding")
+        result =  list(self.collection.aggregate(pipeline))
+        logger.info(f"Found {len(result)} similar ads")
+        return result
+  
+  def search_similar_by_ad_id(self,ad_id : ObjectId, limit: int = 10, number_of_candidates: int = 100):
+      
+      # Fetch the embedding and category details of the given ad_id
+      ad = self.collection.find_one(
+         {
+             '_id': ad_id,
+         },
+         {
+             "ad_embedding" : 1, "main_category": 1, "sub_category": 1, "wanted_offering": 1
+         }
+      )
+
+      if not ad or "ad_embedding" not in ad:
+        logger.error(f"Ad with ID {ad_id} not found or missing embedding.")
+        return []
+      
+      query_embedding = self._generate_bson_query_vector(
+          ad["ad_embedding"])  # Extract embedding
+      main_category = ad.get("main_category", None)  # Extract main category
+      sub_category = ad.get("sub_category", None)  # Extract subcategory
+      wanted_offering = ad.get("wanted_offering", None)  # Extract wanted/offering type   
+       # Determine the opposite of wanted_offering
+      opposite_wanted_offering = "offering" if wanted_offering == "wanted" else "wanted"
+
+      # Construct the filter
+       # Construct the filter dynamically
+      filter_criteria = {
+          "_id": {"$ne": ad_id},  # Exclude the original ad
+          "wanted_offering": opposite_wanted_offering  # Get opposite type of ad
+      }
+    
+    # Add category filters only if they exist
+      if main_category:
+          filter_criteria["main_category"] = main_category
+      if sub_category:
+          filter_criteria["sub_category"] = sub_category
+
+      pipeline = [
+          {
+              "$vectorSearch": {
+                  # "exact": false, defualt : false for ann search
+                  "filter": filter_criteria,
+                  "index": self.ad_embedding_index_name,
+                  "limit": limit,
+                  "numCandidates": number_of_candidates,
+                  "path": "ad_embedding",
+                  "queryVector": query_embedding,
+              }
+          },
+          {"$project": {
+              "ad_embedding": 0,
+              "score": {"$meta": "searchScore"},
+              # "text": 1,
+              # "main_category": 1,
+              # "sub_category": 1,
+              # "transaction_type": 1,
+              # "wanted_offering": 1,
+              # "_id": 1
+          }}
+      ]
+      logger.info(f"Searching for similar ads using ad id")
+      result = list(self.collection.aggregate(pipeline))
+      logger.info(f"Found {len(result)} similar ads")
+      return result
 
