@@ -1,8 +1,8 @@
 import os
 from joblib import load
-from ..ml.model_manager import ModelManager
-from ..core.ad_classifier import AdClassifier
-from ..predictor import CategoryPredictor
+from app.models.model_manager import ModelManager
+from app.core.ad_classifier import AdClassifier
+from app.predictor import CategoryPredictor
 
 # Get the absolute path to the project root directory
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
@@ -43,28 +43,28 @@ label_to_category = {
         4: 'Room & Annex'
     }
 }
-main_category_classifier_svm = load(
+main_category_classifier = load(
     os.path.join(model_dir, 'main/main_cat_lr_classifier.pkl'))
-vehicle_category_classifier = load(
-    os.path.join(model_dir, 'vehicles/vehicle_cat2_nn_classifier.pkl'))
-property_category_classifier = load(
-    os.path.join(model_dir, 'property/property_cat2_nn_classifier.pkl'))
 electronic_category_classifier = load(
     os.path.join(model_dir, 'electronics/electronic_cat2_svmrbf_classifier.pkl'))
+property_category_classifier = load(
+    os.path.join(model_dir, 'property/property_cat2_nn_classifier.pkl'))
+vehicle_category_classifier = load(
+    os.path.join(model_dir, 'vehicles/vehicle_cat2_nn_classifier.pkl'))
 
 manager = ModelManager(categories= categories, label_to_category=label_to_category)
 
 main_category_predictor = CategoryPredictor(
-  model= main_category_classifier_svm, 
+  model= main_category_classifier, 
   label_to_category= label_to_category['Main'])
 
-property_category_predictor = CategoryPredictor(
-  model=property_category_classifier, 
-  label_to_category=label_to_category['Property']
-)
 electronic_category_predictor = CategoryPredictor(
   model=electronic_category_classifier, 
   label_to_category=label_to_category['Electronics']
+)
+property_category_predictor = CategoryPredictor(
+  model=property_category_classifier, 
+  label_to_category=label_to_category['Property']
 )
 vehicle_category_predictor = CategoryPredictor(
   model=vehicle_category_classifier, 

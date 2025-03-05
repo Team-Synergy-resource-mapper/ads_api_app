@@ -27,7 +27,7 @@ def setup_logging():
     # Console Handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(logging.WARNING)
 
     # File Handler (Rotating)
     file_handler = RotatingFileHandler(
@@ -36,11 +36,11 @@ def setup_logging():
         backupCount=5
     )
     file_handler.setFormatter(formatter)
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(logging.WARNING)
 
     # Configure root logger
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.WARNING,
         handlers=[console_handler, file_handler]
     )
     
