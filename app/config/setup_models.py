@@ -1,8 +1,8 @@
 import os
 from joblib import load
-from ..ml.model_manager import ModelManager
-from ..core.ad_classifier import AdClassifier
-from ..predictor import CategoryPredictor
+from app.models.model_manager import ModelManager
+from app.core.ad_classifier import AdClassifier
+from app.predictor import CategoryPredictor
 
 # Get the absolute path to the project root directory
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))

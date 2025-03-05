@@ -1,6 +1,4 @@
 import logging
-# from .xlmr_embeddings import generate_sentence_embeddings
-# from .labse_embeddings import generate_sentence_embeddings
 from app.models.labse_embedding_model import LaBSEEmbedding
 from collections import defaultdict
 import numpy as np

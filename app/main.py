@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import ads
+from app.api.routers.ads import router as ads
 import logging
 from app.logging_config import setup_logging
 from .api.endpoints import ads
