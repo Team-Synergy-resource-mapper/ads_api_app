@@ -1,5 +1,7 @@
 import logging
-from .xlmr_embeddings import generate_sentence_embeddings
+# from .xlmr_embeddings import generate_sentence_embeddings
+# from .labse_embeddings import generate_sentence_embeddings
+from app.models.labse_embedding_model import LaBSEEmbedding
 from collections import defaultdict
 import numpy as np
 
@@ -7,10 +9,11 @@ class AdClassifier:
   def __init__(self, model_manager):
     self.model_manager = model_manager
     self.main_predictor = model_manager.get_model("Main")
+    self.labse_embedding = LaBSEEmbedding()
 
   def classify(self, ads):
       logging.info("Generating embeddings...")
-      embeddings = generate_sentence_embeddings(ads)
+      embeddings = self.labse_embedding.generate_embeddings(ads)
       print(embeddings.shape)
 
       logging.info("Predicting main categories...")
@@ -38,7 +41,6 @@ class AdClassifier:
       for i, prediction in enumerate(main_category_predictions):
         grouped_data[prediction].append(i)
       return grouped_data
-
 
   def _process_subcategory(self, main_category, idx_list, embeddings):
       predictor = self.model_manager.get_model(main_category)
