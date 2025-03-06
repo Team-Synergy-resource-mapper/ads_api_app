@@ -14,6 +14,9 @@ class AdClassifier:
       embeddings = self.labse_embedding.generate_embeddings(ads)
       print(embeddings.shape)
 
+      logging.info("Predicting ad type...")
+      ad_type_predictions = self.model_manager.get_model("Ad_type").predict(embeddings)
+
       logging.info("Predicting main categories...")
       main_category_predictions = self.main_predictor.predict(embeddings)
 
@@ -29,8 +32,8 @@ class AdClassifier:
       sub_category_predictions_sorted = [prediction for (_, prediction) in sorted(sub_category_predictions, key= lambda x : x[0] )]
 
       results = [
-          (main_category, sub_category)
-          for main_category, sub_category in zip(main_category_predictions, sub_category_predictions_sorted)
+          (ad_type, main_category, sub_category)
+          for ad_type, main_category, sub_category in zip(ad_type_predictions, main_category_predictions, sub_category_predictions_sorted)
       ]
       return results
 

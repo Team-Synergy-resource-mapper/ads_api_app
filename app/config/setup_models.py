@@ -8,7 +8,7 @@ from app.predictor import CategoryPredictor
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 model_dir = os.path.join(project_root, 'ml_models')
 
-categories = {"Vehicle", "Electronics", "Property", "Main"}
+categories = {"Vehicle", "Ad_type", "Electronics", "Property", "Main"}
 
 label_to_category = {
     "Main": {
@@ -41,10 +41,16 @@ label_to_category = {
         2: 'House',
         3: 'Land',
         4: 'Room & Annex'
+    },
+    "Ad_type" : {
+        0: "Wanted",
+        1: "Offering"
     }
 }
 main_category_classifier = load(
     os.path.join(model_dir, 'main/main_cat_lr_classifier.pkl'))
+ad_type_classifier = load(
+    os.path.join(model_dir, 'ad_type/adtype_nn_classifier.pkl'))
 electronic_category_classifier = load(
     os.path.join(model_dir, 'electronics/electronic_cat2_svmrbf_classifier.pkl'))
 property_category_classifier = load(
@@ -57,7 +63,9 @@ manager = ModelManager(categories= categories, label_to_category=label_to_catego
 main_category_predictor = CategoryPredictor(
   model= main_category_classifier, 
   label_to_category= label_to_category['Main'])
-
+adtype_category_predictor = CategoryPredictor(
+  model= ad_type_classifier, 
+  label_to_category= label_to_category['Ad_type'])
 electronic_category_predictor = CategoryPredictor(
   model=electronic_category_classifier, 
   label_to_category=label_to_category['Electronics']
@@ -72,6 +80,7 @@ vehicle_category_predictor = CategoryPredictor(
 ) 
 
 manager.set_model("Main", main_category_predictor)
+manager.set_model("Ad_type", adtype_category_predictor)
 manager.set_model("Vehicle", vehicle_category_predictor)
 manager.set_model("Electronics",electronic_category_predictor)
 manager.set_model("Property", property_category_predictor)
