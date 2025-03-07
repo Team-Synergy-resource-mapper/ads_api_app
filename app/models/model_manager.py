@@ -13,9 +13,8 @@ class ModelManager:
   def get_model(self, category):
     if category not in self.categories:
       raise Exception(f"Invalid category: {category}. Allowed: {self.categories}.")
-      
-
     return self.models[category]
+    
   def get_label_to_category_dict(self, category):
     if category not in self.label_to_category:
       raise Exception(f"Invalid category: {category}. Allowed: {self.label_to_category.keys()}")  
