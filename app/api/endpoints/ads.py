@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, text
-from ..models import ClassificationRequest, ClassificationResponse
-from ...models.models import RawListing
-from ...config.setup_models import ad_classifier
-from ...db_config import SessionLocal, DATABASE_URL
+from app.models.models_temp import ClassificationRequest, ClassificationResponse
+from app.models.models import RawListing
+from app.config.setup_models import ad_classifier
+from app.config.db_config import SessionLocal, DATABASE_URL
 from app.models.schemas import AdsRequest, EmbeddingRequest, EmbeddingResponse
 from app.services.embedding_service import EmbeddingService
 from app.dependencies import get_embedding_service
