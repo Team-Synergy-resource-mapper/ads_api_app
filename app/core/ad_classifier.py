@@ -1,13 +1,12 @@
 import logging
-from app.models.labse_embedding_model import LaBSEEmbedding
 from collections import defaultdict
 import numpy as np
-
+from app.dependencies.labse_model import get_labse_model 
 class AdClassifier:
   def __init__(self, model_manager):
     self.model_manager = model_manager
     self.main_predictor = model_manager.get_model("Main")
-    self.labse_embedding = LaBSEEmbedding()
+    self.labse_embedding =  get_labse_model()
 
   def classify(self, ads):
       logging.info("Generating embeddings...")

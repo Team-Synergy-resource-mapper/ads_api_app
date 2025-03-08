@@ -1,11 +1,13 @@
 import tensorflow as tf
 from tensorflow import keras
 
-
 # L2 normalization function
+
+
 def l2_normalize_fn(x):
     """L2 normalization for unit-length embeddings"""
     return tf.math.l2_normalize(x, axis=1)
+
 
 @tf.keras.utils.register_keras_serializable()
 class SimpleAttentionFusion(tf.keras.layers.Layer):
@@ -45,72 +47,91 @@ class SimpleAttentionFusion(tf.keras.layers.Layer):
         return cls(**config)
 
 
-# def l2_normalize_fn(x):
-#     """L2 normalization for unit-length embeddings"""
-#     return tf.math.l2_normalize(x, axis=1)
+def SiameseWithCategories(d_feature=768, dropout_rate=0.4, num_cat1=3, num_cat2=20, cat_embedding_dim_1=3, cat_embedding_dim_2=6):
+    # Create embedding layers for categories
+    cat1_embedding = tf.keras.layers.Embedding(
+        num_cat1, cat_embedding_dim_1, name="cat1_embedding", embeddings_regularizer=tf.keras.regularizers.l2(1e-4))
+    cat2_embedding = tf.keras.layers.Embedding(
+        num_cat2, cat_embedding_dim_2, name="cat2_embedding", embeddings_regularizer=tf.keras.regularizers.l2(1e-4))
 
+    # Define inputs
+    input1_text = tf.keras.layers.Input(
+        shape=(d_feature,), dtype=tf.float32, name="input_1_text")
+    input2_text = tf.keras.layers.Input(
+        shape=(d_feature,), dtype=tf.float32, name="input_2_text")
 
-# @tf.keras.utils.register_keras_serializable()
-# class SimpleAttentionFusion(tf.keras.layers.Layer):
-#     """Simple attention mechanism to fuse important features"""
+    input1_cat1 = tf.keras.layers.Input(
+        shape=(1,), dtype=tf.int32, name="input_1_cat1")
+    input1_cat2 = tf.keras.layers.Input(
+        shape=(1,), dtype=tf.int32, name="input_1_cat2")
 
-#     def __init__(self, units=256, dropout_rate=0.1, **kwargs):
-#         super(SimpleAttentionFusion, self).__init__(**kwargs)
-#         self.units = units
-#         self.dropout_rate = dropout_rate
-#         self.attention = None
-#         self.dense = None
-#         self.dropout = None
+    input2_cat1 = tf.keras.layers.Input(
+        shape=(1,), dtype=tf.int32, name="input_2_cat1")
+    input2_cat2 = tf.keras.layers.Input(
+        shape=(1,), dtype=tf.int32, name="input_2_cat2")
 
-#     def build(self, input_shape):
-#         self.attention = tf.keras.layers.Dense(
-#             1, activation="gelu")  # Compute attention scores
-#         self.dense = tf.keras.layers.Dense(
-#             self.units, kernel_regularizer=tf.keras.regularizers.l2(1e-4))
-#         self.dropout = tf.keras.layers.Dropout(
-#             self.dropout_rate)  # Dropout layer
-#         super().build(input_shape)
+    # Process categories
+    cat1_vec1 = tf.keras.layers.Flatten()(cat1_embedding(input1_cat1))
+    cat2_vec1 = tf.keras.layers.Flatten()(cat2_embedding(input1_cat2))
 
-#     def call(self, inputs, training=None):
-#         expanded_inputs = tf.expand_dims(
-#             inputs, axis=1)  # (batch, 1, features)
-#         scores = self.attention(expanded_inputs)  # (batch, 1, 1)
-#         # Optional: Apply dropout to attention scores
-#         scores = self.dropout(scores, training=training)
-#         attention_weights = tf.nn.softmax(scores, axis=1)  # Normalize
-#         context_vector = attention_weights * expanded_inputs  # Weighted features
-#         output = self.dense(tf.squeeze(context_vector, axis=1))  # Project back
-#         # Apply dropout to the output of the dense layer
-#         output = self.dropout(output, training=training)
-#         return output
+    cat1_vec2 = tf.keras.layers.Flatten()(cat1_embedding(input2_cat1))
+    cat2_vec2 = tf.keras.layers.Flatten()(cat2_embedding(input2_cat2))
 
-#     def get_config(self):
-#         config = super(SimpleAttentionFusion, self).get_config()
-#         config.update({"units": self.units, "dropout_rate": self.dropout_rate})
-#         return config
+    # Combine text with categories before processing
+    combined_input1 = tf.keras.layers.Concatenate()(
+        [input1_text, cat1_vec1, cat2_vec1])
+    combined_input2 = tf.keras.layers.Concatenate()(
+        [input2_text, cat1_vec2, cat2_vec2])
 
-#     @classmethod
-#     def from_config(cls, config):
-#         return cls(**config)
+    # Define shared feature extraction branch
+    def create_branch(input_layer):
+        # Dense Block 1
+        x = tf.keras.layers.Dense(512, kernel_regularizer=tf.keras.regularizers.l2(
+            1e-4))(input_layer)  # No activation here
+        x = tf.keras.layers.BatchNormalization()(x)  # BatchNorm before activation
+        x = tf.keras.layers.Activation("gelu")(x)  # Apply GELU after BatchNorm
+        x = tf.keras.layers.Dropout(dropout_rate)(x)
 
+        # Dense Block 2
+        x = tf.keras.layers.Dense(384, kernel_regularizer=tf.keras.regularizers.l2(
+            1e-4))(x)  # No activation here
+        x = tf.keras.layers.BatchNormalization()(x)  # BatchNorm before activation
+        x = tf.keras.layers.Activation("gelu")(x)  # Apply GELU after BatchNorm
+        x = tf.keras.layers.Dropout(dropout_rate * 0.3)(x)
 
-def load_siamese_branch(model_path):
-    """
-    Load the saved siamese branch model with custom objects
-    Args:
-        model_path: Path to the saved branch model
-    Returns:
-        The loaded siamese branch model
-    """
-    loaded_branch = keras.models.load_model(
-        model_path,
-        custom_objects={
-            'l2_normalize_fn': l2_normalize_fn,
-            'SimpleAttentionFusion': SimpleAttentionFusion
-        },
-        compile=False
+        # Attention Fusion Layer
+        x = SimpleAttentionFusion(256)(x)
+        # x = SimpleAttentionFusion(300)(x)
+
+        # L2 Normalization
+        output = tf.keras.layers.Lambda(l2_normalize_fn)(x)
+        return output
+
+    # Create siamese branch as a shared model - FIXED VERSION
+    shared_input = tf.keras.layers.Input(
+        shape=(d_feature + cat_embedding_dim_1 + cat_embedding_dim_2,))
+    shared_output = create_branch(shared_input)
+    siamese_branch = tf.keras.Model(
+        inputs=shared_input,
+        outputs=shared_output,
+        name="siamese_branch"
     )
-    return loaded_branch
+
+    # Apply shared model to both inputs
+    branch1 = siamese_branch(combined_input1)
+    branch2 = siamese_branch(combined_input2)
+
+    # Concatenate embeddings (maintaining same output structure)
+    concat = tf.keras.layers.Concatenate(
+        name="concatenated")([branch1, branch2])
+
+    return tf.keras.Model(
+        inputs=[input1_text, input2_text, input1_cat1,
+                input1_cat2, input2_cat1, input2_cat2],
+        outputs=concat,
+        name="siamese_model_with_categories"
+    )
+# For loading the model
 
 
 def load_siamese_model(model_path):
@@ -124,5 +145,7 @@ def load_siamese_model(model_path):
         compile=False
     )
     return loaded_model
+
+
 
 

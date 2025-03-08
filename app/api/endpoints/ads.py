@@ -1,4 +1,8 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
+from app.services.embedding_service import EmbeddingService
+from app.dependencies.embedding_service import get_embedding_service
+from app.dependencies.mongo_db import get_vector_db
+from app.db.vector_db import VectorDB
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, text
 from app.models.models_temp import ClassificationRequest, ClassificationResponse
@@ -6,10 +10,6 @@ from app.models.models import RawListing
 from app.config.setup_models import ad_classifier
 from app.config.db_config import SessionLocal, DATABASE_URL
 from app.models.schemas import AdsRequest, EmbeddingRequest, EmbeddingResponse
-from app.services.embedding_service import EmbeddingService
-from app.dependencies import get_embedding_service
-from app.db.mongo_db import get_vector_db
-from app.db.vector_db import VectorDB
 
 router = APIRouter()
 
@@ -87,12 +87,6 @@ async def generate_ad_embeddings(
     vector_db : VectorDB  = Depends(get_vector_db)
 ):
     """Generate embeddings for ads using a preloaded model."""
-
-    # ad_texts = [ad.text for ad in request.ads]
-
-    # print(f"Classifying {len(ad_texts)} ads...")
-    # predictions = ad_classifier.classify(ad_texts)
-    # print("Completed classifying {len(predictions)} predictions")
 
     if embedding_service.siamese_model is None or embedding_service.labse_model is None:
         raise HTTPException(status_code=503, detail="Models not initialized")
