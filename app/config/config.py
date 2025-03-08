@@ -11,7 +11,9 @@ BASE_DIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 # Model configurations
 SIAMESE_MODEL_PATH = os.getenv(
     "SIAMESE_MODEL_PATH",
-    "./ml_models/matching/siamese_model_with_categories_laBSE.keras")
+    "./ml_models/matching/siamese_model_with_categories_laBSE.keras"
+    #  "./ml_models/matching/siamese_model_with_categories_laBSE.weights.h5"
+    )
 
 
 # LaBSE model configuration

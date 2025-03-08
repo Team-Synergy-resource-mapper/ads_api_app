@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends
 # from ..setup_models import ad_classifier
 from app.models.schemas import AdsRequest, EmbeddingRequest, EmbeddingResponse
 from app.services.embedding_service import EmbeddingService
-from app.dependencies import get_embedding_service
+from app.dependencies.embedding_service import get_embedding_service
 
 router = APIRouter()
 
