@@ -12,39 +12,40 @@ categories = {"Vehicle", "Ad_type", "Electronics", "Property", "Main"}
 
 label_to_category = {
     "Main": {
-        0: 'Electronics',
-        1: 'Property',
-        2: 'Vehicle'
+        0: 'electronics',
+        1: 'property',
+        2: 'vehicle'
     },
     "Vehicle": {
-        0: 'Bicycle',
-        1: 'Bike',
-        2: 'Car',
-        3: 'Lorry_truck',
-        4: 'Three-wheeler',
-        5: 'Van'
+        0: 'bicycle',
+        1: 'bike',
+        2: 'car',
+        3: 'lorry_truck',
+        4: 'three-wheeler',
+        5: 'van'
     },
     "Electronics": {
-        0: 'Air Conditions & Electrical fittings',
-        1: 'Audio & MP3',
-        2: 'Cameras & Camcorders',
-        3: 'Computer Accessories',
-        4: 'Computers',
-        5: 'Electronic Home Appliances',
-        6: 'Mobile Phone Accessories',
-        7: 'Mobile Phones & Tablets',
-        8: 'TVs'
+        0: 'air conditions & electrical fittings',
+        1: 'audio & mp3',
+        2: 'cameras & camcorders',
+        3: 'computer accessories',
+        4: 'computers',
+        5: 'electronic home appliances',
+        6: 'mobile phone accessories',
+        7: 'mobile phones & tablets',
+        8: 'tvs',
+        9 : "other electronics"
     },
     "Property": {
-        0: 'Apartment',
-        1: 'Commercial property',
-        2: 'House',
-        3: 'Land',
-        4: 'Room & Annex'
+        0: 'apartment',
+        1: 'commercial property',
+        2: 'house',
+        3: 'land',
+        4: 'room & annex'
     },
     "Ad_type" : {
-        0: "Wanted",
-        1: "Offering"
+        0: "wanted",
+        1: "offering"
     }
 }
 main_category_classifier = load(

@@ -1,10 +1,10 @@
 import os
 import numpy as np
 import tensorflow as tf
-from app.models.siamese_model import load_siamese_branch, load_siamese_model
+from app.models.siamese_model import load_siamese_model
 from app.models.labse_embedding_model import LaBSEEmbedding
 # from app.models.vector_db import VectorDB
-from app.config.config import MODEL_PATH, INDEX_PATH, METADATA_PATH, VECTOR_DB_DIR, LABEL_TO_CATEGORY_MAPPING_MAIN, LABEL_TO_CATEGORY_MAPPING_SUB
+from app.config.config import SIAMESE_MODEL_PATH, LABEL_TO_CATEGORY_MAPPING_MAIN, LABEL_TO_CATEGORY_MAPPING_SUB
 from app.models import schemas
 from typing import List
 import logging
@@ -33,9 +33,9 @@ class EmbeddingService:
         """Load the embedding model"""
         try:
             # self.embedding_model = load_siamese_branch(MODEL_PATH)
-            self.siamese_model = load_siamese_model(MODEL_PATH)
-            logger.info(f"Loaded embedding model from {MODEL_PATH}")
-            print(f"Loaded embedding model from {MODEL_PATH}")
+            self.siamese_model = load_siamese_model(SIAMESE_MODEL_PATH)
+            logger.info(f"Loaded embedding model from {SIAMESE_MODEL_PATH}")
+            print(f"Loaded embedding model from {SIAMESE_MODEL_PATH}")
             return True
         except Exception as e:
             logger.critical(f"Error loading embedding model: {e}")

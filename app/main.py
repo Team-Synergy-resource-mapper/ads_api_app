@@ -1,8 +1,6 @@
 from fastapi import FastAPI
-from app.api.routers.ads import router as ads
 import logging
 from app.config.logging_config import setup_logging
-from app.api.endpoints import ads
 from contextlib import asynccontextmanager
 from app.api.endpoints.ads import router as ads_router
 
