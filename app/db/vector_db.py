@@ -16,8 +16,9 @@ class VectorDB:
       self.client = MongoClient(mongodb_uri)
       self.db = self.client[db_name]
       self.collection = self.db[collection_name]
-      self._ensure_index_exists()
       self.ad_embedding_index_name = "vector_index"
+      self._ensure_index_exists()
+      
 
   def _ensure_index_exists(self):
       
@@ -58,6 +59,7 @@ class VectorDB:
           logger.info("Vector search index created.")
 
   def _generate_bson_vector(self, vector, vector_dtype = BinaryVectorDtype.FLOAT32):
+      
       return Binary.from_vector(vector, vector_dtype)
   def insert_ad(self, ad : Ad , embedding):
       
@@ -84,6 +86,7 @@ class VectorDB:
           }
           for i, ad in enumerate(ads)
       ]
+      
 
       result =  self.collection.insert_many(documents)
       logger.info(f"Ads inserted with ids: {', '.join(str(id) for id in result.inserted_ids)}")

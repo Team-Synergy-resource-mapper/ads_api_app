@@ -8,6 +8,8 @@ from app.config.db_config import SessionLocal, DATABASE_URL
 from app.models.schemas import AdsRequest, EmbeddingRequest, EmbeddingResponse
 from app.services.embedding_service import EmbeddingService
 from app.dependencies import get_embedding_service
+from app.db.mongo_db import get_vector_db
+from app.db.vector_db import VectorDB
 
 router = APIRouter()
 
@@ -81,16 +83,55 @@ async def classify_listings(limit: int = Query(5, ge=0), db: Session = Depends(g
               )
 async def generate_ad_embeddings(
     request: AdsRequest,
-    embedding_service: EmbeddingService = Depends(get_embedding_service)
+    embedding_service: EmbeddingService = Depends(get_embedding_service),
+    vector_db : VectorDB  = Depends(get_vector_db)
 ):
     """Generate embeddings for ads using a preloaded model."""
-    if embedding_service.embedding_model is None or embedding_service.labse_model is None:
+
+    # ad_texts = [ad.text for ad in request.ads]
+
+    # print(f"Classifying {len(ad_texts)} ads...")
+    # predictions = ad_classifier.classify(ad_texts)
+    # print("Completed classifying {len(predictions)} predictions")
+
+    if embedding_service.siamese_model is None or embedding_service.labse_model is None:
         raise HTTPException(status_code=503, detail="Models not initialized")
 
     try:
         result = embedding_service.generate_ad_embeddings(request.ads)
+        print(result)
+        print(result.shape)
+
+        res = vector_db.insert_ads(request.ads, result)
+        print(res)
         # return result
-        return "Ads generated"
+        return f"{len(result)} ads generated."
+    
+        
     except Exception as e:
+        print("Error occurred while inserting ads into vector database:")
+        print(e)
         raise HTTPException(
             status_code=500, detail=f"Error generating embeddings: {str(e)}")
+    
+
+# @router.post("/generate",
+#              #   response_model=EmbeddingResponse
+#              )
+# async def generate_ad_embeddings(
+#     request: AdsRequest,
+#     embedding_service: EmbeddingService = Depends(get_embedding_service)
+# ):
+#     """Generate embeddings for ads using a preloaded model."""
+
+
+#     if embedding_service.embedding_model is None or embedding_service.labse_model is None:
+#         raise HTTPException(status_code=503, detail="Models not initialized")
+
+#     try:
+#         result = embedding_service.generate_ad_embeddings(request.ads)
+#         # return result
+#         return "Ads generated"
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=500, detail=f"Error generating embeddings: {str(e)}")
