@@ -1,10 +1,10 @@
+import logging
 from pymongo import MongoClient
 from pymongo.operations import SearchIndexModel
 import numpy as np
 from datetime import datetime
 from typing import List
 import app.models.schemas as schemas
-import logging
 from bson.binary import BinaryVectorDtype, Binary
 from app.models.schemas import Ad
 from bson import ObjectId
@@ -135,9 +135,10 @@ class VectorDB:
       if not ad or "ad_embedding" not in ad:
         logger.error(f"Ad with ID {ad_id} not found or missing embedding.")
         return []
-      
-      query_embedding = self._generate_bson_query_vector(
-          ad["ad_embedding"])  # Extract embedding
+      logger.info(f"Fetched ad with ID {ad_id}")  
+
+          
+      query_embedding = ad["ad_embedding"]
       main_category = ad.get("main_category", None)  # Extract main category
       sub_category = ad.get("sub_category", None)  # Extract subcategory
       wanted_offering = ad.get("wanted_offering", None)  # Extract wanted/offering type   
@@ -147,7 +148,7 @@ class VectorDB:
       # Construct the filter
        # Construct the filter dynamically
       filter_criteria = {
-          "_id": {"$ne": ad_id},  # Exclude the original ad
+        #   "_id": {"$ne": ad_id},  # Exclude the original ad
           "wanted_offering": opposite_wanted_offering  # Get opposite type of ad
       }
     
@@ -171,7 +172,7 @@ class VectorDB:
           },
           {"$project": {
               "ad_embedding": 0,
-              "score": {"$meta": "searchScore"},
+              "score": {"$meta": "vectorSearchScore"},
               # "text": 1,
               # "main_category": 1,
               # "sub_category": 1,

@@ -5,11 +5,14 @@ from app.dependencies.mongo_db import get_vector_db
 from app.db.vector_db import VectorDB
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, text
-from app.models.models_temp import ClassificationRequest, ClassificationResponse
+from app.models.models_temp import ClassificationRequest
 from app.models.models import RawListing
 from app.config.setup_models import ad_classifier
 from app.config.db_config import SessionLocal, DATABASE_URL
-from app.models.schemas import AdsRequest, EmbeddingRequest, EmbeddingResponse
+from app.models.schemas import AdsRequest
+from bson import ObjectId
+from app.models.schemas import MatchingAdResponse
+from typing import List
 
 router = APIRouter()
 
@@ -109,23 +112,30 @@ async def generate_ad_embeddings(
             status_code=500, detail=f"Error generating embeddings: {str(e)}")
     
 
-# @router.post("/generate",
-#              #   response_model=EmbeddingResponse
-#              )
-# async def generate_ad_embeddings(
-#     request: AdsRequest,
-#     embedding_service: EmbeddingService = Depends(get_embedding_service)
-# ):
-#     """Generate embeddings for ads using a preloaded model."""
+@router.get("/ads/similar/{ad_id}", response_model=List[MatchingAdResponse])
+def get_similar_ads(ad_id: str, 
+                    limit: int = 10, 
+                    num_candidates: int = 100, 
+                    vector_db :VectorDB = Depends(get_vector_db)):
+    try:
+        object_id = ObjectId(ad_id)  # Validate ObjectId
+    except:
+        raise HTTPException(status_code=400, detail="Invalid ObjectId format")
 
+    similar_ads = vector_db.search_similar_by_ad_id(
+        object_id, limit, num_candidates)
 
-#     if embedding_service.embedding_model is None or embedding_service.labse_model is None:
-#         raise HTTPException(status_code=503, detail="Models not initialized")
+    if not similar_ads:
+        raise HTTPException(status_code=404, detail="No similar ads found")
 
-#     try:
-#         result = embedding_service.generate_ad_embeddings(request.ads)
-#         # return result
-#         return "Ads generated"
-#     except Exception as e:
-#         raise HTTPException(
-#             status_code=500, detail=f"Error generating embeddings: {str(e)}")
+    return [
+        MatchingAdResponse(
+            id=str(ad["_id"]),
+            text=ad.get("text", ""),
+            main_category=ad.get("main_category", ""),
+            sub_category=ad.get("sub_category", ""),
+            transaction_type=ad.get("transaction_type", ""),
+            wanted_offering=ad.get("wanted_offering", ""),
+            score=ad["score"]
+        ) for ad in similar_ads
+    ]
