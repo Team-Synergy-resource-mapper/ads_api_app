@@ -15,6 +15,7 @@ from bson import ObjectId
 from app.models.schemas import MatchingAdResponse
 from typing import List, Optional
 from app.models.schemas import MainCategory, SubCategory, WantedOffering, TransactionType, Ad
+from app.core.batch_processing import transform_listing_to_ad, process_transform_batches
 
 router = APIRouter()
 
@@ -25,39 +26,6 @@ def get_session_local():
         yield db
     finally:
         db.close()
-
-def transform_listing_to_ad(listing: RawListing, prediction: tuple) -> Ad:
-    """
-    Transform a RawListing and its classification prediction into an Ad object.
-    The prediction tuple is expected to be (ad_type, main_category, sub_category).
-    """
-    ad_type, main_category, sub_category = prediction
-
-    # Map ad_type to WantedOffering Enum
-    wanted_offering = WantedOffering.WANTED if ad_type.lower() == "wanted" else WantedOffering.OFFERING
-
-    # Convert main_category to Enum (handling case insensitivity)
-    try:
-        main_category_enum = MainCategory(main_category.lower())
-    except ValueError:
-        logging.warning(f"Unrecognized main category: {main_category}, defaulting to ELECTRONICS.")
-        main_category_enum = MainCategory.UNDEFINED  # Default fallback
-
-    # Convert sub_category to Enum (handling case insensitivity)
-    try:
-        sub_category_enum = SubCategory(sub_category.lower())
-    except ValueError:
-        logging.warning(f"Unrecognized subcategory: {sub_category}, defaulting to ELECTRONIC_HOME_APPLIANCES.")
-        sub_category_enum = SubCategory.UNDEFINED  # Default fallback
-
-    return Ad(
-        text=listing.combined_text,
-        main_category=main_category_enum,
-        sub_category=sub_category_enum,
-        transaction_type=TransactionType.SALE,  # Defaulting to SALE for now
-        wanted_offering=wanted_offering
-    )
-
 
 @router.get("/")
 def read_ads_router():
@@ -197,85 +165,3 @@ async def batch_transform_embeddings(
     # Launch the batch processing as a background task.
     background_tasks.add_task(process_transform_batches, batch_size, max_records, embedding_service, vector_db)
     return {"message": "Batch transformation started in the background."}
-
-def process_listings_batch(listings, offset, embedding_service, vector_db):
-    """Process a single batch of listings: classify, transform, and embed."""
-    # Extract texts for classification from listings that have combined_text.
-    texts = [listing.combined_text for listing in listings if listing.combined_text]
-    if not texts:
-        return 0, []
-    
-    try:
-        # Classify the texts
-        predictions = ad_classifier.classify(texts)
-    except Exception as e:
-        logging.error(f"Error during classification at offset {offset}: {e}")
-        return 0, []
-    
-    # Transform each listing to the Ad schema
-    ad_entries = create_ad_entries(listings, predictions)
-    if not ad_entries:
-        return 0, []
-    
-    # Generate embeddings and store in DB
-    try:
-        embeddings = embedding_service.generate_ad_embeddings(ad_entries)
-        vector_db.insert_ads(ad_entries, embeddings)
-        logging.info(f"Processed batch starting at offset {offset}: {len(ad_entries)} ads transformed and embedded.")
-        return len(ad_entries), ad_entries
-    except Exception as e:
-        logging.error(f"Error during embedding generation/insertion at offset {offset}: {e}")
-        return 0, []
-
-def create_ad_entries(listings, predictions):
-    """Create Ad objects from listings and their predictions."""
-    ad_entries = []
-    prediction_index = 0
-    
-    for listing in listings:
-        if listing.combined_text:
-            prediction = predictions[prediction_index]
-            prediction_index += 1
-            ad_entry = transform_listing_to_ad(listing, prediction)
-            ad_entries.append(ad_entry)
-    
-    return ad_entries
-
-def process_transform_batches(batch_size: int, max_records: Optional[int], embedding_service: EmbeddingService, vector_db: VectorDB):
-    """
-    Background task that processes raw listings in batches:
-    1. Fetch a batch of listings.
-    2. Use ad_classifier.classify on the combined_text to get predictions.
-    3. Transform each listing to the Ad format.
-    4. Generate embeddings and insert into MongoDB.
-    5. If `max_records` is set, stops after processing that number of records.
-    """
-    session = SessionLocal()
-    offset = 0
-    total_processed = 0
-
-    try:
-        while True:
-            # Check if we've hit the maximum records limit
-            if max_records and total_processed >= max_records:
-                logging.info(f"Reached max_records limit: {max_records}. Stopping batch processing.")
-                break
-                
-            # Fetch the next batch of listings
-            listings = session.query(RawListing).offset(offset).limit(batch_size).all()
-            if not listings:
-                logging.info("No more listings to process.")
-                break
-                
-            # Process this batch of listings
-            processed_count, _ = process_listings_batch(
-                listings, offset, embedding_service, vector_db
-            )
-            
-            total_processed += processed_count
-            offset += batch_size
-    except Exception as e:
-        logging.error(f"Unexpected error during batch processing at offset {offset}: {e}")
-    finally:
-        session.close()
-        logging.info("Batch transformation processing completed.")
