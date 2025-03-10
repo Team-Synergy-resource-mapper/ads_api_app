@@ -7,13 +7,14 @@ class MainCategory(str, Enum):
     ELECTRONICS = 'electronics'
     PROPERTY = 'property'
     VEHICLE = 'vehicle'
+    UNDEFINED = 'undefined'
 
 
 class SubCategory(str, Enum):
     VAN = 'van'
     THREE_WHEELER = 'three-wheeler'
     ROOM_ANNEX = 'room & annex'
-    LORRY_TRUCK = 'lorry truck'
+    LORRY_TRUCK = 'lorry_truck'
     LAND = 'land'
     HOUSE = 'house'
     COMMERCIAL_PROPERTY = 'commercial property'
@@ -30,6 +31,8 @@ class SubCategory(str, Enum):
     CAMERAS_CAMCORDERS = 'cameras & camcorders'
     AUDIO_MP3 = 'audio & mp3'
     AIR_CONDITIONS_ELECTRICAL_FITTINGS = 'air conditions & electrical fittings'
+    OTHER_ELECTRONICS = 'other electronics'
+    UNDEFINED = 'undefined'
 
 
 class TransactionType(str, Enum):

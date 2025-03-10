@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Text, ARRAY, JSON, Boolean
+from sqlalchemy import Column, Integer, String, Text, ARRAY, JSON, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
 
 Base = declarative_base()
 
@@ -22,3 +23,15 @@ class RawListing(Base):
     def __repr__(self):
         return f"<RawListing(title={self.title}, url={self.url})>"
 
+class BatchProcessingTracker(Base):
+    __tablename__ = "batch_processing_tracker"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    last_processed_id = Column(Integer, nullable=False)
+    processed_time = Column(DateTime, default=func.now(), nullable=False)
+
+class BatchProcessingControl(Base):
+    __tablename__ = "batch_processing_control"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    stop_flag = Column(Boolean, default=False)

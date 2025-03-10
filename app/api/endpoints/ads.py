@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+import logging
+from fastapi import APIRouter, HTTPException, Query, Depends, BackgroundTasks
 from app.services.embedding_service import EmbeddingService
 from app.dependencies.embedding_service import get_embedding_service
 from app.dependencies.mongo_db import get_vector_db
@@ -6,13 +7,15 @@ from app.db.vector_db import VectorDB
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, text
 from app.models.models_temp import ClassificationRequest
-from app.models.models import RawListing
+from app.models.models import RawListing, BatchProcessingControl
 from app.config.setup_models import ad_classifier
 from app.config.db_config import SessionLocal, DATABASE_URL
 from app.models.schemas import AdsRequest
 from bson import ObjectId
 from app.models.schemas import MatchingAdResponse
-from typing import List
+from typing import List, Optional
+from app.models.schemas import MainCategory, SubCategory, WantedOffering, TransactionType, Ad
+from app.core.batch_processing import transform_listing_to_ad, process_transform_batches
 
 router = APIRouter()
 
@@ -139,3 +142,44 @@ def get_similar_ads(ad_id: str,
             score=ad["score"]
         ) for ad in similar_ads
     ]
+
+@router.post("/batch-transform-embeddings")
+async def batch_transform_embeddings(
+    background_tasks: BackgroundTasks,
+    batch_size: int = Query(100, ge=1, description="Number of records to process in each batch"),
+    max_records: Optional[int] = Query(None, ge=1, description="Maximum number of records to process (optional)"),
+    db: Session = Depends(get_session_local),
+    embedding_service: EmbeddingService = Depends(get_embedding_service),
+    vector_db: VectorDB = Depends(get_vector_db)
+):
+    """
+    Endpoint to process raw listings in batches:
+    - Classify listings using combined_text with ad_classifier.
+    - Transform them to the Ad schema.
+    - Generate embeddings and store the results in MongoDB.
+    - Can optionally stop after processing `max_records`.
+    """
+    if not embedding_service.siamese_model or not embedding_service.labse_model:
+        raise HTTPException(status_code=503, detail="Models not initialized")
+    
+    # Launch the batch processing as a background task.
+    background_tasks.add_task(process_transform_batches, batch_size, max_records, embedding_service, vector_db)
+    return {"message": "Batch transformation started in the background."}
+
+@router.post("/stop_batch_processing")
+async def stop_batch_processing(
+    stop: bool = Query(True, description="Set to True to stop the batch"),
+    db: Session = Depends(get_session_local)
+):
+    try:
+        # Set the stop flag to True to stop the batch processing
+        stop_flag = db.query(BatchProcessingControl).first()
+        if not stop_flag:
+            stop_flag = BatchProcessingControl(stop_flag=True)
+            db.add(stop_flag)
+        else:
+            stop_flag.stop_flag = True
+        db.commit()
+        return {"message": "Batch processing has been stopped"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error stopping batch processing: {e}")
