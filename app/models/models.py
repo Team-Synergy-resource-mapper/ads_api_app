@@ -29,3 +29,9 @@ class BatchProcessingTracker(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     last_processed_id = Column(Integer, nullable=False)
     processed_time = Column(DateTime, default=func.now(), nullable=False)
+
+class BatchProcessingControl(Base):
+    __tablename__ = "batch_processing_control"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    stop_flag = Column(Boolean, default=False)

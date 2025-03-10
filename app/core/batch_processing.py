@@ -1,13 +1,31 @@
 import logging
 from typing import Optional
 from sqlalchemy.orm import Session
-from app.models.models import RawListing, BatchProcessingTracker
+from app.models.models import RawListing, BatchProcessingTracker, BatchProcessingControl
 from app.models.schemas import Ad, MainCategory, SubCategory, WantedOffering, TransactionType
 from app.services.embedding_service import EmbeddingService
 from app.db.vector_db import VectorDB
 from app.config.setup_models import ad_classifier
 from app.config.db_config import SessionLocal, DATABASE_URL
 
+
+def reset_stop_flag(db: Session):
+    """Reset the stop flag to False before starting the batch processing."""
+    try:
+        stop_control = db.query(BatchProcessingControl).first()
+        if stop_control:
+            stop_control.stop_flag = False  # Reset stop flag
+            db.commit()
+            logging.info("Stop flag reset to False.")
+        else:
+            logging.warning("No entry found in BatchProcessingControl table.")
+    except Exception as e:
+        logging.error(f"Error resetting stop flag: {e}")
+
+def should_stop(db: Session) -> bool:
+    """Check if the stop flag is set to True in the database."""
+    stop_flag = db.query(BatchProcessingControl).first()
+    return stop_flag and stop_flag.stop_flag
 
 def transform_listing_to_ad(listing: RawListing, prediction: tuple) -> Ad:
     """
@@ -94,6 +112,10 @@ def process_transform_batches(batch_size: int, max_records: Optional[int], embed
     5. If `max_records` is set, stops after processing that number of records.
     """
     session = SessionLocal()
+
+    # Reset the stop flag at the start of the batch processing
+    reset_stop_flag(session)
+    
     offset = 0
     total_processed = 0
     last_processed_id = None  # Track last processed primary key
@@ -117,9 +139,15 @@ def process_transform_batches(batch_size: int, max_records: Optional[int], embed
             if max_records and total_processed >= max_records:
                 logging.info(f"Reached max_records limit: {max_records}. Stopping batch processing.")
                 break
+
+            # Check if the stop flag is set
+            if should_stop(session):
+                logging.info("Stop flag detected, halting batch processing.")
+                break
                 
             # Fetch the next batch of listings
             listings = session.query(RawListing).filter(RawListing.id > last_processed_id, RawListing.fetched == False).offset(offset).limit(batch_size).all()
+            
             if not listings:
                 logging.info("No more listings to process.")
                 break

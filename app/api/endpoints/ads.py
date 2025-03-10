@@ -7,7 +7,7 @@ from app.db.vector_db import VectorDB
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, text
 from app.models.models_temp import ClassificationRequest
-from app.models.models import RawListing
+from app.models.models import RawListing, BatchProcessingControl
 from app.config.setup_models import ad_classifier
 from app.config.db_config import SessionLocal, DATABASE_URL
 from app.models.schemas import AdsRequest
@@ -165,3 +165,21 @@ async def batch_transform_embeddings(
     # Launch the batch processing as a background task.
     background_tasks.add_task(process_transform_batches, batch_size, max_records, embedding_service, vector_db)
     return {"message": "Batch transformation started in the background."}
+
+@router.post("/stop_batch_processing")
+async def stop_batch_processing(
+    stop: bool = Query(True, description="Set to True to stop the batch"),
+    db: Session = Depends(get_session_local)
+):
+    try:
+        # Set the stop flag to True to stop the batch processing
+        stop_flag = db.query(BatchProcessingControl).first()
+        if not stop_flag:
+            stop_flag = BatchProcessingControl(stop_flag=True)
+            db.add(stop_flag)
+        else:
+            stop_flag.stop_flag = True
+        db.commit()
+        return {"message": "Batch processing has been stopped"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error stopping batch processing: {e}")
