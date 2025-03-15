@@ -1,4 +1,5 @@
 import logging
+import json
 from typing import Optional
 from sqlalchemy.orm import Session
 from app.models.models import RawListing, BatchProcessingTracker, BatchProcessingControl
@@ -50,9 +51,28 @@ def transform_listing_to_ad(listing: RawListing, prediction: tuple) -> Ad:
     except ValueError:
         logging.warning(f"Unrecognized subcategory: {sub_category}, defaulting to ELECTRONIC_HOME_APPLIANCES.")
         sub_category_enum = SubCategory.UNDEFINED  # Default fallback
+    
+    # Convert RawListing fields (excluding combined_text and fetched) into a JSON string safely
+    raw_listing_dict = {
+        "title": listing.title or "N/A",
+        "meta_data": listing.meta_data or "{}",
+        "price": listing.price or "Unknown",
+        "attributes": listing.attributes or [],
+        "description": listing.description or "No description provided.",
+        "url": listing.url or "N/A",
+        "breadcrumbs": listing.breadcrumbs or [],
+        "image_urls": listing.image_urls or [],
+        "additional_data": listing.additional_data or {},
+    }
+
+    try:
+        json_text = json.dumps(raw_listing_dict, ensure_ascii=False)
+    except Exception as e:
+        logging.error(f"Error serializing RawListing data: {e}")
+        json_text = json.dumps({"error": "Failed to serialize listing data"})  # Fallback JSON
 
     return Ad(
-        text=listing.combined_text,
+        text=json_text,
         main_category=main_category_enum,
         sub_category=sub_category_enum,
         transaction_type=TransactionType.SALE,  # Defaulting to SALE for now
