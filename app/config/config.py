@@ -62,3 +62,7 @@ LABEL_TO_CATEGORY_MAPPING_SUB = {
     1: 'audio & mp3',
     0: 'air conditions & electrical fittings'
 }
+
+# JWT configuration
+JWT_SECRET = os.getenv("JWT_SECRET", "dev_secret_key_change_me")
+JWT_ALGORITHM = "HS256"

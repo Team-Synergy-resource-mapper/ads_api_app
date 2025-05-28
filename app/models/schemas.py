@@ -66,6 +66,21 @@ class MatchingAdResponse(BaseModel):
     wanted_offering : WantedOffering
     score : float
 
+class UserRegister(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class UserInDB(BaseModel):
+    id: str = None
+    username: str
+    email: str
+    hashed_password: str
+
 
 
 
