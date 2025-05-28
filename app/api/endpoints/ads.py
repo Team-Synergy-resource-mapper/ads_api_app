@@ -49,7 +49,7 @@ async def classify(request: ClassificationRequest):
     raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/post")
+@router.post("/post_deprecated")
 async def classify(request: AdPostRequest,
                    embedding_service: EmbeddingService = Depends(
                        get_embedding_service),
@@ -178,6 +178,7 @@ def convert_to_dto(ad):
         text_json = json.loads(ad.get('text', '{}')) if isinstance(ad.get('text'), str) else ad.get('text', {})
     except Exception:
         text_json = {}
+    print(text_json)
     return AdvertisementDto(
         id=str(ad.get('_id', ad.get('id', ''))),
         title=text_json.get('title'),
@@ -261,7 +262,7 @@ async def get_current_user(authorization: str = Header(...)):
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-@router.post("/post")
+@router.post("/post_ad")
 async def post_ad(
     ad: AdCreate,
     embedding_service: EmbeddingService = Depends(get_embedding_service),
