@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from enum import Enum
 from bson import ObjectId
@@ -50,6 +50,7 @@ class Ad(BaseModel):
     sub_category : SubCategory
     transaction_type : TransactionType = TransactionType.SALE
     wanted_offering : WantedOffering = WantedOffering.OFFERING
+    user_id: Optional[str] = None   # Optional user ID 
 
 
 class AdsRequest(BaseModel):
@@ -59,6 +60,7 @@ class AdsRequest(BaseModel):
 class MatchingAdResponse(BaseModel):
     ''' Retreived matching'''
     id : str
+    user_id: Optional[str] = None
     text : str
     main_category : MainCategory
     sub_category : SubCategory

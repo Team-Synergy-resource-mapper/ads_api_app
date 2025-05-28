@@ -6,7 +6,7 @@ from app.dependencies.mongo_db import get_vector_db
 from app.db.vector_db import VectorDB
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, text
-from app.models.models_temp import ClassificationRequest
+from app.models.models_temp import ClassificationRequest, AdPostRequest
 from app.models.models import RawListing, BatchProcessingControl
 from app.config.setup_models import ad_classifier
 from app.config.db_config import SessionLocal, DATABASE_URL
@@ -44,6 +44,61 @@ async def classify(request: ClassificationRequest):
 
   except ValueError as e:
     raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/post")
+async def classify(request: AdPostRequest,
+                   embedding_service: EmbeddingService = Depends(
+                       get_embedding_service),
+                   vector_db: VectorDB = Depends(get_vector_db)):
+  try:
+
+    # Perform classification
+    if not request.title or not request.description:
+        raise ValueError("Title and description are required fields.")
+    if not request.user_id:
+        raise ValueError("User ID is required.")
+    
+    ad_text = f"{request.title} {request.description}"
+
+    predictions = ad_classifier.classify([ad_text])
+    if not predictions or len(predictions) == 0:
+        raise ValueError("No predictions were made. Please check the input data.")
+    print(predictions)
+    # Extract predictions
+    wanted_offering, main_category, sub_category = [item.lower() for item in predictions[0]]
+    ad = Ad(
+        text=ad_text,
+        main_category=MainCategory(main_category),
+        sub_category=SubCategory(sub_category),
+        transaction_type=TransactionType.SALE,  # Default to SALE
+        wanted_offering=WantedOffering(wanted_offering),
+        user_id=request.user_id 
+    )
+
+    # Generate embeddings for the ad
+    if embedding_service.siamese_model is None or embedding_service.labse_model is None:
+        raise HTTPException(status_code=503, detail="Models not initialized")
+    
+    embeddings = embedding_service.generate_ad_embeddings([ad])
+
+    if embeddings is None or len(embeddings) == 0:
+        raise ValueError("Failed to generate embeddings for the ad.")
+    
+    # Insert the ad into the vector database
+    result = vector_db.insert_ads([ad], embeddings)
+    if not result:
+        raise ValueError("Failed to insert ad into the vector database.")
+    
+
+    return {
+        "message": "Ad classified and embeddings generated successfully.",
+        "ad_id": str(result.inserted_ids[0]),  # Assuming the result contains inserted_ids
+    }
+
+  except ValueError as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
 
 @router.get("/raw-listings")
 async def get_raw_listings(limit: int = Query(5, ge=0)):
