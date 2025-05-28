@@ -46,6 +46,7 @@ class WantedOffering(str, Enum):
 class AdCreate(BaseModel):
     title: str | None = None
     body: str
+    user_id: str
 
 class Ad(BaseModel):
     """Schema for an ad"""
@@ -85,6 +86,18 @@ class UserInDB(BaseModel):
     username: str
     email: str
     hashed_password: str
+
+class AdvertisementDto(BaseModel):
+    id: str
+    title: str | None = None
+    url: str | None = None
+    description: str | None = None
+    main_category: str
+    sub_category: str
+    created_at: str | None = None
+    transaction_type: str
+    wanted_offering: str
+    image_urls: list[str] = []
 
 
 
