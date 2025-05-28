@@ -43,6 +43,10 @@ class WantedOffering(str, Enum):
     OFFERING = "offering"
     WANTED = "wanted"
 
+class AdCreate(BaseModel):
+    title: str | None = None
+    body: str
+
 class Ad(BaseModel):
     """Schema for an ad"""
     text: str
@@ -50,6 +54,7 @@ class Ad(BaseModel):
     sub_category : SubCategory
     transaction_type : TransactionType = TransactionType.SALE
     wanted_offering : WantedOffering = WantedOffering.OFFERING
+    user_id: str | None = None
 
 
 class AdsRequest(BaseModel):
