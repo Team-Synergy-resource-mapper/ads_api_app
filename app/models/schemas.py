@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from enum import Enum
 from bson import ObjectId
@@ -64,6 +64,7 @@ class AdsRequest(BaseModel):
 class MatchingAdResponse(BaseModel):
     ''' Retreived matching'''
     id : str
+    user_id: Optional[str] = None
     text : str
     main_category : MainCategory
     sub_category : SubCategory

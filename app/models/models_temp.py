@@ -13,6 +13,12 @@ class Ad(BaseModel):
     description : str
 
 class AdRequest(BaseModel):
-    ads : List[Ad]    
-    
+    ads : List[Ad]   
+
+
+class AdPostRequest(BaseModel):
+    title: str
+    description: str
+    user_id: str
+# class AdPostResponse(BaseModel):   
        
