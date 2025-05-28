@@ -64,13 +64,12 @@ class VectorDB:
   def insert_ad(self, ad : Ad , embedding):
       
       embedding = self._generate_bson_vector(embedding)
-      result =  self.collection.insert_one(
-          {
-              **ad.model_dump(),
-              "ad_embedding": embedding,
-              "created_at": datetime.now()
-          }
-      )
+      doc = {
+          **ad.model_dump(),
+          "ad_embedding": embedding,
+          "created_at": datetime.now()
+      }
+      result =  self.collection.insert_one(doc)
       logger.info(f"Ad inserted with id: {result.inserted_id}")
       return result
 
