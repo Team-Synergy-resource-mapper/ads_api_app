@@ -24,6 +24,18 @@ label_to_category = {
         4: 'three-wheeler',
         5: 'van'
     },
+    # "Electronics": {
+    #     0: 'air conditions & electrical fittings',
+    #     1: 'audio & mp3',
+    #     2: 'cameras & camcorders',
+    #     3: 'computer accessories',
+    #     4: 'computers',
+    #     5: 'electronic home appliances',
+    #     6: 'mobile phone accessories',
+    #     7: 'mobile phones & tablets',
+    #     8: 'tvs',
+    #     9 : "other electronics"
+    # },
     "Electronics": {
         0: 'air conditions & electrical fittings',
         1: 'audio & mp3',
@@ -34,7 +46,7 @@ label_to_category = {
         6: 'mobile phone accessories',
         7: 'mobile phones & tablets',
         8: 'tvs',
-        9 : "other electronics"
+       
     },
     "Property": {
         0: 'apartment',
@@ -52,8 +64,10 @@ main_category_classifier = load(
     os.path.join(model_dir, 'main/main_cat_lr_classifier.pkl'))
 ad_type_classifier = load(
     os.path.join(model_dir, 'ad_type/adtype_nn_classifier.pkl'))
+# electronic_category_classifier = load(
+#     os.path.join(model_dir, 'electronics/electronic_cat2_svmrbf_classifier.pkl'))
 electronic_category_classifier = load(
-    os.path.join(model_dir, 'electronics/electronic_cat2_svmrbf_classifier.pkl'))
+    os.path.join(model_dir, 'electronics/electronic_svm_rbf_pipeline.pkl'))
 property_category_classifier = load(
     os.path.join(model_dir, 'property/property_cat2_nn_classifier.pkl'))
 vehicle_category_classifier = load(
