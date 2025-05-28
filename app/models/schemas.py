@@ -43,6 +43,10 @@ class WantedOffering(str, Enum):
     OFFERING = "offering"
     WANTED = "wanted"
 
+class AdCreate(BaseModel):
+    title: str | None = None
+    body: str
+
 class Ad(BaseModel):
     """Schema for an ad"""
     text: str
@@ -50,7 +54,7 @@ class Ad(BaseModel):
     sub_category : SubCategory
     transaction_type : TransactionType = TransactionType.SALE
     wanted_offering : WantedOffering = WantedOffering.OFFERING
-    user_id: Optional[str] = None   # Optional user ID 
+    user_id: str | None = None
 
 
 class AdsRequest(BaseModel):
@@ -67,6 +71,21 @@ class MatchingAdResponse(BaseModel):
     transaction_type : TransactionType
     wanted_offering : WantedOffering
     score : float
+
+class UserRegister(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class UserInDB(BaseModel):
+    id: str = None
+    username: str
+    email: str
+    hashed_password: str
 
 
 

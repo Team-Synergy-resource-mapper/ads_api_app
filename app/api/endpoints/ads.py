@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, HTTPException, Query, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Query, Depends, BackgroundTasks, Header
 from app.services.embedding_service import EmbeddingService
 from app.dependencies.embedding_service import get_embedding_service
 from app.dependencies.mongo_db import get_vector_db
@@ -10,12 +10,14 @@ from app.models.models_temp import ClassificationRequest, AdPostRequest
 from app.models.models import RawListing, BatchProcessingControl
 from app.config.setup_models import ad_classifier
 from app.config.db_config import SessionLocal, DATABASE_URL
-from app.models.schemas import AdsRequest
+from app.models.schemas import AdsRequest, AdCreate
 from bson import ObjectId
 from app.models.schemas import MatchingAdResponse
 from typing import List, Optional
 from app.models.schemas import MainCategory, SubCategory, WantedOffering, TransactionType, Ad
 from app.core.batch_processing import transform_listing_to_ad, process_transform_batches
+import jwt
+from app.config import config
 
 router = APIRouter()
 
@@ -238,3 +240,64 @@ async def stop_batch_processing(
         return {"message": "Batch processing has been stopped"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error stopping batch processing: {e}")
+
+# Dependency to get current user from JWT
+async def get_current_user(authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+    token = authorization.split(" ", 1)[1]
+    try:
+        payload = jwt.decode(token, config.JWT_SECRET, algorithms=[config.JWT_ALGORITHM])
+        return payload
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@router.post("/post")
+async def post_ad(
+    ad: AdCreate,
+    embedding_service: EmbeddingService = Depends(get_embedding_service),
+    vector_db: VectorDB = Depends(get_vector_db),
+    user=Depends(get_current_user)
+):
+    # Combine title and body
+    combined_text = (ad.title + " ") if ad.title else ""
+    combined_text += ad.body
+    # Classify
+    predictions = ad_classifier.classify([combined_text])
+    print("Predictions:", predictions)
+    if not predictions or not isinstance(predictions[0], (list, tuple)):
+        raise ValueError("Classifier did not return a valid prediction tuple.")
+    pred = [item.lower() for item in predictions[0]]
+    print("Pred:", pred)
+
+    wanted_offering, main_category, sub_category = pred
+    transaction_type = TransactionType.SALE  # Default
+
+    # Build Ad object
+    ad_obj = Ad(
+        text=combined_text,
+        main_category=MainCategory(main_category),
+        sub_category=SubCategory(sub_category),
+        transaction_type=TransactionType(transaction_type),
+        wanted_offering=WantedOffering(wanted_offering),
+        user_id=user["user_id"]
+    )
+    # Generate embedding
+    embedding = embedding_service.generate_ad_embeddings([ad_obj])[0]
+    # Store in DB
+    result = vector_db.insert_ad(ad_obj, embedding)
+    return {"msg": "Ad posted successfully", "ad_id": str(result.inserted_id),}
+
+@router.get("/my")
+async def get_my_ads(
+    vector_db: VectorDB = Depends(get_vector_db),
+    user=Depends(get_current_user)
+):
+    user_id = user["user_id"]
+    ads = list(vector_db.collection.find({"user_id": user_id}))
+    # Convert ObjectId to string and filter fields for response
+    for ad in ads:
+        ad["id"] = str(ad["_id"])
+        ad.pop("_id", None)
+        ad.pop("ad_embedding", None)  # Don't return embedding
+    return {"ads": ads}
