@@ -10,7 +10,7 @@ from app.models.models_temp import ClassificationRequest, AdPostRequest
 from app.models.models import RawListing, BatchProcessingControl
 from app.config.setup_models import ad_classifier
 from app.config.db_config import SessionLocal, DATABASE_URL
-from app.models.schemas import AdsRequest, AdCreate
+from app.models.schemas import AdsRequest, AdCreate, AdvertisementDto
 from bson import ObjectId
 from app.models.schemas import MatchingAdResponse
 from typing import List, Optional
@@ -18,6 +18,7 @@ from app.models.schemas import MainCategory, SubCategory, WantedOffering, Transa
 from app.core.batch_processing import transform_listing_to_ad, process_transform_batches
 import jwt
 from app.config import config
+import json
 
 router = APIRouter()
 
@@ -48,7 +49,7 @@ async def classify(request: ClassificationRequest):
     raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/post")
+@router.post("/post_deprecated")
 async def classify(request: AdPostRequest,
                    embedding_service: EmbeddingService = Depends(
                        get_embedding_service),
@@ -172,7 +173,26 @@ async def generate_ad_embeddings(
             status_code=500, detail=f"Error generating embeddings: {str(e)}")
     
 
-@router.get("/ads/similar/{ad_id}", response_model=List[MatchingAdResponse])
+def convert_to_dto(ad):
+    try:
+        text_json = json.loads(ad.get('text', '{}')) if isinstance(ad.get('text'), str) else ad.get('text', {})
+    except Exception:
+        text_json = {}
+    print(text_json)
+    return AdvertisementDto(
+        id=str(ad.get('_id', ad.get('id', ''))),
+        title=text_json.get('title'),
+        url=text_json.get('url'),
+        description=text_json.get('description'),
+        main_category=str(ad.get('main_category', '')),
+        sub_category=str(ad.get('sub_category', '')),
+        created_at=ad.get('created_at').isoformat() if ad.get('created_at') else None,
+        transaction_type=str(ad.get('transaction_type', '')),
+        wanted_offering=str(ad.get('wanted_offering', '')),
+        image_urls=text_json.get('image_urls', [])
+    )
+
+@router.get("/ads/similar/{ad_id}", response_model=list[AdvertisementDto])
 def get_similar_ads(ad_id: str, 
                     limit: int = 10, 
                     num_candidates: int = 100, 
@@ -188,17 +208,7 @@ def get_similar_ads(ad_id: str,
     if not similar_ads:
         raise HTTPException(status_code=404, detail="No similar ads found")
 
-    return [
-        MatchingAdResponse(
-            id=str(ad["_id"]),
-            text=ad.get("text", ""),
-            main_category=ad.get("main_category", ""),
-            sub_category=ad.get("sub_category", ""),
-            transaction_type=ad.get("transaction_type", ""),
-            wanted_offering=ad.get("wanted_offering", ""),
-            score=ad["score"]
-        ) for ad in similar_ads
-    ]
+    return [convert_to_dto(ad) for ad in similar_ads]
 
 @router.post("/batch-transform-embeddings")
 async def batch_transform_embeddings(
@@ -252,12 +262,11 @@ async def get_current_user(authorization: str = Header(...)):
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-@router.post("/post")
+@router.post("/post_ad")
 async def post_ad(
     ad: AdCreate,
     embedding_service: EmbeddingService = Depends(get_embedding_service),
-    vector_db: VectorDB = Depends(get_vector_db),
-    user=Depends(get_current_user)
+    vector_db: VectorDB = Depends(get_vector_db)
 ):
     # Combine title and body
     combined_text = (ad.title + " ") if ad.title else ""
@@ -268,19 +277,27 @@ async def post_ad(
     if not predictions or not isinstance(predictions[0], (list, tuple)):
         raise ValueError("Classifier did not return a valid prediction tuple.")
     pred = [item.lower() for item in predictions[0]]
-    print("Pred:", pred)
-
-    wanted_offering, main_category, sub_category = pred
-    transaction_type = TransactionType.SALE  # Default
-
-    # Build Ad object
+    if len(pred) == 4:
+        main_category, sub_category, transaction_type, wanted_offering = pred
+    elif len(pred) == 3:
+        wanted_offering, main_category, sub_category = pred
+        transaction_type = "sale"  # Default
+    else:
+        raise ValueError(f"Classifier returned {len(pred)} values, expected 3 or 4.")
+    # Store title and description as JSON in text field
+    text_json = json.dumps({
+        "title": ad.title,
+        "description": ad.body,
+        "url": None,
+        "image_urls": []
+    })
     ad_obj = Ad(
-        text=combined_text,
+        text=text_json,
         main_category=MainCategory(main_category),
         sub_category=SubCategory(sub_category),
         transaction_type=TransactionType(transaction_type),
         wanted_offering=WantedOffering(wanted_offering),
-        user_id=user["user_id"]
+        user_id=ad.user_id
     )
     # Generate embedding
     embedding = embedding_service.generate_ad_embeddings([ad_obj])[0]
@@ -288,16 +305,10 @@ async def post_ad(
     result = vector_db.insert_ad(ad_obj, embedding)
     return {"msg": "Ad posted successfully", "ad_id": str(result.inserted_id),}
 
-@router.get("/my")
+@router.get("/my", response_model=list[AdvertisementDto])
 async def get_my_ads(
-    vector_db: VectorDB = Depends(get_vector_db),
-    user=Depends(get_current_user)
+    user_id: str,
+    vector_db: VectorDB = Depends(get_vector_db)
 ):
-    user_id = user["user_id"]
     ads = list(vector_db.collection.find({"user_id": user_id}))
-    # Convert ObjectId to string and filter fields for response
-    for ad in ads:
-        ad["id"] = str(ad["_id"])
-        ad.pop("_id", None)
-        ad.pop("ad_embedding", None)  # Don't return embedding
-    return {"ads": ads}
+    return [convert_to_dto(ad) for ad in ads]
