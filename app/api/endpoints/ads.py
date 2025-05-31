@@ -312,3 +312,42 @@ async def get_my_ads(
 ):
     ads = list(vector_db.collection.find({"user_id": user_id}))
     return [convert_to_dto(ad) for ad in ads]
+
+@router.delete("/delete/{ad_id}")
+async def delete_ad(
+    ad_id: str,
+    vector_db: VectorDB = Depends(get_vector_db)
+):
+    try:
+        object_id = ObjectId(ad_id)  # Validate ObjectId
+    except:
+        raise HTTPException(status_code=400, detail="Invalid ObjectId format")
+
+    result = vector_db.collection.delete_one({"_id": object_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Ad not found")
+    
+    return {"msg": "Ad deleted successfully"}
+
+@router.get("/filter")
+async def filter_ads(
+    main_category: Optional[MainCategory] = None,
+    sub_category: Optional[SubCategory] = None,
+    transaction_type: Optional[TransactionType] = None,
+    wanted_offering: Optional[WantedOffering] = None,
+    limit: int = Query(10, ge=1),
+    vector_db: VectorDB = Depends(get_vector_db)
+):
+    query = {}
+    if main_category:
+        query["main_category"] = main_category.value
+    if sub_category:
+        query["sub_category"] = sub_category.value
+    if transaction_type:
+        query["transaction_type"] = transaction_type.value
+    if wanted_offering:
+        query["wanted_offering"] = wanted_offering.value
+
+    ads = list(vector_db.collection.find(query).limit(limit))
+    return [convert_to_dto(ad) for ad in ads]
+
